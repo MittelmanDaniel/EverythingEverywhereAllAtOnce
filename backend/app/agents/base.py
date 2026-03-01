@@ -2,15 +2,22 @@ import logging
 
 from playwright.async_api import async_playwright
 
-from browser_use_sdk.v2 import AsyncBrowserUse
+from browser_use_sdk.v2 import AsyncBrowserUse as V2Client
+from browser_use_sdk.v3 import AsyncBrowserUse as V3Client
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 
-def get_client() -> AsyncBrowserUse:
-    return AsyncBrowserUse(api_key=settings.browser_use_api_key)
+def get_v2_client() -> V2Client:
+    """v2 client — used for browsers.create() which exposes CDP URLs."""
+    return V2Client(api_key=settings.browser_use_api_key)
+
+
+def get_v3_client() -> V3Client:
+    """v3 client — used for running agent tasks."""
+    return V3Client(api_key=settings.browser_use_api_key)
 
 
 def cookies_to_playwright_format(cookies: list[dict]) -> list[dict]:
@@ -37,27 +44,30 @@ def cookies_to_playwright_format(cookies: list[dict]) -> list[dict]:
     return formatted
 
 
-async def create_browser_with_cookies(client: AsyncBrowserUse, cookies: list[dict]) -> str:
-    """Create a cloud browser session and inject cookies via CDP.
+async def create_browser_with_cookies(cookies: list[dict]) -> str:
+    """Create a cloud browser via v2, inject cookies via CDP.
 
-    Returns the browser session ID to pass as session_id when creating tasks.
+    Returns the browser session ID (usable as sessionId in v3 tasks).
     """
-    browser_session = await client.browsers.create()
-    session_id = str(browser_session.id)
-    cdp_url = browser_session.cdp_url
+    v2 = get_v2_client()
+    try:
+        browser_session = await v2.browsers.create()
+        session_id = str(browser_session.id)
+        cdp_url = browser_session.cdp_url
 
-    if not cdp_url:
-        logger.warning("No CDP URL returned — cookies cannot be injected")
+        if not cdp_url:
+            logger.warning("No CDP URL returned — cookies cannot be injected")
+            return session_id
+
+        formatted = cookies_to_playwright_format(cookies)
+        logger.info(f"Injecting {len(formatted)} cookies via CDP into session {session_id}")
+
+        async with async_playwright() as p:
+            browser = await p.chromium.connect_over_cdp(cdp_url)
+            context = browser.contexts[0] if browser.contexts else await browser.new_context()
+            await context.add_cookies(formatted)
+
+        logger.info(f"Cookie injection complete for session {session_id}")
         return session_id
-
-    formatted = cookies_to_playwright_format(cookies)
-    logger.info(f"Injecting {len(formatted)} cookies via CDP into session {session_id}")
-
-    async with async_playwright() as p:
-        browser = await p.chromium.connect_over_cdp(cdp_url)
-        context = browser.contexts[0] if browser.contexts else await browser.new_context()
-        await context.add_cookies(formatted)
-        # Disconnect from the remote browser (does NOT close it)
-
-    logger.info(f"Cookie injection complete for session {session_id}")
-    return session_id
+    finally:
+        await v2.close()

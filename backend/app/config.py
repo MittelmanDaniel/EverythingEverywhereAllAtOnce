@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     secret_key: str = "change-me"
     cookie_encryption_key: str = ""
     browser_use_api_key: str = ""
+    anthropic_api_key: str = ""
     cors_origins: str = "http://localhost:3000"
     access_token_expire_minutes: int = 1440  # 24 hours
 

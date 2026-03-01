@@ -1,6 +1,6 @@
 import logging
 
-from app.agents.base import create_browser_with_cookies, get_client
+from app.agents.base import create_browser_with_cookies, get_v3_client
 from app.agents.schemas.google import GoogleData
 
 logger = logging.getLogger(__name__)
@@ -30,22 +30,16 @@ Return all data in the structured format requested.
 
 
 async def run_google_agent(cookies: list[dict]) -> dict:
-    client = get_client()
-    try:
-        session_id = await create_browser_with_cookies(client, cookies)
+    # v2 browser with CDP cookie injection
+    session_id = await create_browser_with_cookies(cookies)
 
+    # v3 agent runs the task in that browser
+    client = get_v3_client()
+    try:
         result = client.run(
             task=GOOGLE_TASK,
             session_id=session_id,
-            schema=GoogleData,
-            start_url="https://drive.google.com",
-            allowed_domains=[
-                "google.com",
-                "drive.google.com",
-                "docs.google.com",
-                "mail.google.com",
-                "accounts.google.com",
-            ],
+            output_schema=GoogleData,
         )
 
         task_result = await result
