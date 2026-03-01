@@ -46,6 +46,8 @@
   .vo{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--violet);margin-bottom:7px;opacity:0;transform:translateY(14px)}
   .vurl{font-family:'DM Mono',monospace;font-size:9px;color:var(--cool);opacity:0;margin-bottom:30px;transform:translateY(14px)}
   .vtit{font-family:'Instrument Serif',serif;font-weight:400;font-size:42px;line-height:1.18;color:var(--s100);margin-bottom:10px;opacity:0;transform:translateY(22px)}
+  .vtit.clamped{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .rm-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--violet);cursor:pointer;border:none;background:none;padding:0;margin-top:-4px;margin-bottom:14px;opacity:.6;transition:opacity .2s;display:none}.rm-btn:hover{opacity:1}
   .vsub{font-family:'Playfair Display',serif;font-style:italic;font-weight:300;font-size:18px;color:var(--warm);opacity:0;margin-bottom:48px;transform:translateY(16px)}
   .rv{animation:ru .9s ease forwards}
   .va-w{width:100%;aspect-ratio:16/9;border-radius:6px;position:relative;overflow:hidden;margin-bottom:48px;border:1px solid rgba(200,190,225,.05);opacity:0;transform:translateY(18px)}.va-w.rv{animation:ru 1s ease forwards}
@@ -177,10 +179,12 @@ const coreLight=new THREE.PointLight(0xeeeeff,3,60);scene.add(coreLight);
 scene.add(new THREE.AmbientLight(0x332244,.25));
 
 // ============ STARS + NEBULA (always visible) ============
-const sGeo=new THREE.BufferGeometry();const SC=3000,sP=new Float32Array(SC*3);
-for(let i=0;i<SC;i++){const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=80+Math.random()*400;sP[i*3]=r*Math.sin(ph)*Math.cos(th);sP[i*3+1]=r*Math.sin(ph)*Math.sin(th);sP[i*3+2]=r*Math.cos(ph)}
-sGeo.setAttribute('position',new THREE.BufferAttribute(sP,3));
-scene.add(new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xd4cee0,size:.1,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true})));
+const SC=3000,starMats=[];
+for(let g=0;g<4;g++){const n=Math.floor(SC/4),sg=new THREE.BufferGeometry(),sp=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=80+Math.random()*400;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=r*Math.sin(ph)*Math.sin(th);sp[i*3+2]=r*Math.cos(ph)}
+  sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  const sm=new THREE.PointsMaterial({color:0xd4cee0,size:.5,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true});
+  sm._phase=g*Math.PI*.5;starMats.push(sm);scene.add(new THREE.Points(sg,sm));}
 
 const nebulae=[];
 [{n:1500,rMin:2,rMax:22,y:4,c:0xb48fd4,s:.03,o:.12},{n:1000,rMin:5,rMax:30,y:3,c:0x8b9fd4,s:.025,o:.08},{n:600,rMin:20,rMax:50,y:6,c:0xff8866,s:.02,o:.04}].forEach(cfg=>{
@@ -256,15 +260,15 @@ function buildScene(){
     const geo=new THREE.BufferGeometry();
     const pos=new Float32Array(60*3);geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
     const [r,g,b]=d.c.map(v=>v/255);
-    const mat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.08+d.zone*.01});
+    const mat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.22+d.zone*.03});
     const line=new THREE.Line(geo,mat);scene.add(line);
-    threads.push({line,geo,toIdx:i,offset:Math.random()*10,baseOp:.08+d.zone*.01});
+    threads.push({line,geo,toIdx:i,offset:Math.random()*10,baseOp:.22+d.zone*.03});
     if(i<D.length-1){
       const geo2=new THREE.BufferGeometry();
       const pos2=new Float32Array(30*3);geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
-      const mat2=new THREE.LineBasicMaterial({color:0xa89eb8,transparent:true,opacity:.02});
+      const mat2=new THREE.LineBasicMaterial({color:0xa89eb8,transparent:true,opacity:.08});
       const line2=new THREE.Line(geo2,mat2);scene.add(line2);
-      threads.push({line:line2,geo:geo2,fromIdx:i,toIdx:i+1,offset:Math.random()*10,baseOp:.02});
+      threads.push({line:line2,geo:geo2,fromIdx:i,toIdx:i+1,offset:Math.random()*10,baseOp:.08});
     }
   });
   document.getElementById('st').textContent=threads.length;
@@ -336,6 +340,7 @@ function loop(){
   coreMesh.scale.setScalar(p);
   coreLight.intensity=2.5+Math.sin(time*1.2);
   scene.children.forEach(c=>{if(c.isPoints&&c._rotSpeed)c.rotation.y+=c._rotSpeed});
+  starMats.forEach(m=>{m.opacity=.15+.35*Math.abs(Math.sin(time*2.5+m._phase))});
 
   if(D.length>0) updateThreads(time);
   updateCam();
@@ -401,14 +406,18 @@ function showV(idx){
   document.getElementById('vvc').innerHTML=`
     <div class="vo rv" style="animation-delay:0s">${a.l}</div>
     <div class="vurl rv" style="animation-delay:.1s">${d.url}</div>
-    <h2 class="vtit rv" style="animation-delay:.2s">${a.t}</h2>
+    <h2 class="vtit clamped rv" id="vtit-el" style="animation-delay:.2s">${a.t}</h2>
+    <button class="rm-btn" id="rm-btn" onclick="expandTitle()">Read more ↓</button>
     <div class="vsub rv" style="animation-delay:.35s">${a.s}</div>
     <div class="va-w rv" style="animation-delay:.45s"><div class="vbg"></div>${genBlock}<div class="scn"></div></div>
     <div class="ga" id="ga"><div class="ga-l">Verse generated — an alternate life</div><div class="ga-n" id="gn"></div></div>
     ${actionsBlock}
     <div class="cv rv" style="animation-delay:.65s"><div class="cv-l">Convergence · ${ZONES[d.zone]}</div><div class="cv-t">${a.cv}</div></div>`;
   document.getElementById('vv').classList.add('on');document.getElementById('vb').classList.add('vis');
+  setTimeout(()=>{const tel=document.getElementById('vtit-el'),tbtn=document.getElementById('rm-btn');if(tel&&tbtn&&tel.scrollHeight>tel.clientHeight+2)tbtn.style.display='block'},400);
 }
+
+function expandTitle(){const el=document.getElementById('vtit-el'),btn=document.getElementById('rm-btn');if(el)el.classList.remove('clamped');if(btn)btn.style.display='none'}
 
 function exitV(){const vid=document.querySelector('.verse-video');if(vid)vid.pause();document.getElementById('vv').classList.remove('on');document.getElementById('vb').classList.remove('vis');document.querySelectorAll('.mc').forEach(e=>e.classList.remove('h'));document.body.style.cursor='crosshair';activeV=null}
 
