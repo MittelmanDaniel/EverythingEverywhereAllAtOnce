@@ -1,7 +1,9 @@
 from app.agents.google_agent import run_google_agent
+from app.agents.history_agent import run_history_agent
 
 AGENTS = {
     "google": run_google_agent,
+    "history": run_history_agent,
 }
 
 

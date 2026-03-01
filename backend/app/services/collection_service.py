@@ -12,7 +12,7 @@ from app.services.analysis_service import run_analysis
 logger = logging.getLogger(__name__)
 
 
-async def run_collection(user_id: str, service: str, session_id: str):
+async def run_collection(user_id: str, service: str, session_id: str, stop_when_done: bool = True):
     """Background task: run Browser Use agent to collect data from a service."""
     async with async_session() as db:
         try:
@@ -49,3 +49,34 @@ async def run_collection(user_id: str, service: str, session_id: str):
             logger.error(f"Collection failed for {user_id}/{service}: {e}")
             conn.status = "error"
             await db.commit()
+
+        finally:
+            if stop_when_done:
+                await _stop_session_if_done(db, user_id, session_id)
+
+
+async def run_all_collections(user_id: str, services: list[str], session_id: str):
+    """Run multiple agents sequentially in the same browser session."""
+    for service in services:
+        await run_collection(user_id, service, session_id, stop_when_done=False)
+
+    # All done — stop the session
+    from app.agents.base import stop_session
+    await stop_session(session_id)
+
+
+async def _stop_session_if_done(db, user_id: str, session_id: str):
+    """Stop the Browser Use session if no services are still collecting."""
+    try:
+        result = await db.execute(
+            select(ServiceConnection).where(
+                ServiceConnection.user_id == user_id,
+                ServiceConnection.status == "collecting",
+            )
+        )
+        still_collecting = result.scalars().all()
+        if not still_collecting:
+            from app.agents.base import stop_session
+            await stop_session(session_id)
+    except Exception as e:
+        logger.warning(f"Failed to check/stop session: {e}")

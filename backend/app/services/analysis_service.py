@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are an analyst for "Everything Everywhere All at Once" — an app that maps the alternate lives a person almost lived based on their digital footprint.
 
-Given a user's Google data (Drive files, Docs, Gmail drafts, labels), identify the most meaningful "paths not taken" — moments where their life could have branched differently.
+Given a user's digital footprint — Google data (Drive files, Docs, Gmail drafts, labels) and recent browser history (searches, visited pages from the last week) — identify the most meaningful "paths not taken" — moments where their life could have branched differently.
 
 Look for:
 - Abandoned projects: docs or files that started strong but were never finished
@@ -21,9 +21,10 @@ Look for:
 - Forgotten interests: files or docs in domains they clearly cared about but drifted away from
 - Dormant periods: gaps or silences in their digital activity
 - Hidden ambitions: titles or content that hint at a life they were considering
+- Curious obsessions: recent search patterns or browsing binges that reveal a fascination the user hasn't acted on — a career they keep researching, a place they keep looking up, a skill they keep watching tutorials about but never started
 
 For each path, assign:
-- category: one of "abandoned_project", "forgotten_interest", "dormant_period", "unsent_message", "hidden_ambition"
+- category: one of "abandoned_project", "forgotten_interest", "dormant_period", "unsent_message", "hidden_ambition", "curious_obsession"
 - title: a short, evocative name for this alternate life branch (e.g. "The Novelist You Almost Became")
 - description: 2-3 sentences in second person ("You...") that make this path feel real and emotionally resonant
 - evidence: the specific data point(s) that reveal this path (file name, draft subject, etc.)
@@ -33,7 +34,7 @@ For each path, assign:
 Return a JSON object with a single key "paths" containing an array of path objects. Return 5–15 paths. Only include paths with confidence >= 0.4."""
 
 def _build_user_message(data: dict) -> str:
-    return f"""Here is the user's collected Google data:
+    return f"""Here is the user's collected digital footprint (Google data and browser history):
 
 {json.dumps(data, indent=2)}
 
