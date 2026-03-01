@@ -124,6 +124,8 @@ def path_to_verse(path: PathNotTaken, index: int) -> dict:
     if not url:
         url = path.title
 
+    video = evidence.get("video", "") if isinstance(evidence, dict) else ""
+
     zone_label = ZONES[zone]
 
     return {
@@ -131,6 +133,7 @@ def path_to_verse(path: PathNotTaken, index: int) -> dict:
         "y": year,
         "mo": month,
         "url": url,
+        "video": video,
         "t": path.title,
         "w": path.description,
         "c": color,

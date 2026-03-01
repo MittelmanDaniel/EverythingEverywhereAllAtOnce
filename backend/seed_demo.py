@@ -46,7 +46,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.7,
         "timeline_date": "2018-03",
-        "evidence_json": json.dumps({"url": "https://www.sfballet.org/2025-2026-season/"}),
+        "evidence_json": json.dumps({"url": "https://www.sfballet.org/2025-2026-season/", "video": "/videos/swan-lake.mp4"}),
     },
     {
         "category": "abandoned_project",
@@ -64,7 +64,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.8,
         "timeline_date": "2021-01",
-        "evidence_json": json.dumps({"url": "https://docs.google.com/document/create"}),
+        "evidence_json": json.dumps({"url": "https://docs.google.com/document/create", "video": "/videos/manuscript.mp4"}),
     },
     {
         "category": "abandoned_project",
@@ -73,7 +73,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.75,
         "timeline_date": "2022-10",
-        "evidence_json": json.dumps({"url": "https://www.ycombinator.com/apply"}),
+        "evidence_json": json.dumps({"url": "https://www.ycombinator.com/apply", "video": "/videos/yc-app.mp4"}),
     },
     {
         "category": "forgotten_interest",
