@@ -25,7 +25,10 @@ async function checkConnections() {
   try {
     const res = await fetch(`${API}/api/connections`, { headers });
     if (!res.ok) return null;
-    return await res.json();
+    const data = await res.json();
+    // API returns { connections: [...] }, normalize to { services: [...] }
+    if (data.connections && !data.services) data.services = data.connections;
+    return data;
   } catch { return null; }
 }
 
@@ -50,13 +53,28 @@ function completeStep1Auto(services) {
   showServices(services);
 }
 
-function completeStep1() {
-  clearTimeout(pollConn);
-  document.getElementById('s1-status').textContent = 'Moving on...';
-  document.getElementById('s1-status').className = 'step-status ok';
-  document.getElementById('s1-btn').style.display = 'none';
-  activateStep(2);
-  loadStep2();
+async function completeStep1() {
+  const btn = document.getElementById('s1-btn');
+  const status = document.getElementById('s1-status');
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  status.textContent = 'Verifying cookie sync...';
+  status.className = 'step-status working';
+
+  const data = await checkConnections();
+  if (data && data.services && data.services.some(s => s.status === 'connected' || s.status === 'collected')) {
+    clearTimeout(pollConn);
+    status.textContent = 'Cookies synced — services detected';
+    status.className = 'step-status ok';
+    btn.style.display = 'none';
+    activateStep(2);
+    showServices(data.services);
+  } else {
+    status.textContent = 'No cookies found yet — sync from the extension first';
+    status.className = 'step-status';
+    btn.disabled = false;
+    btn.textContent = "I've synced my cookies";
+  }
 }
 
 // ============ STEP 2: Collect Your Data ============
