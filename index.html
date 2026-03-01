@@ -5,1213 +5,489 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verse Walker</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
+  :root{--void:#030206;--s100:#f0ecf5;--s200:#d4cee0;--s300:#a89eb8;--s400:#7a6f90;--s500:#4d4460;--s600:#2e2840;--warm:#d4a574;--cool:#8b9fd4;--violet:#b48fd4;--vd:#8a6aad;--rose:#c47a8a}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--void);color:var(--s100);font-family:'Playfair Display',serif;overflow:hidden;height:100vh;width:100vw;cursor:crosshair}
+  #c{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1}
+  .vig{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;background:radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(3,2,6,.45)70%,rgba(3,2,6,.85)100%)}
+  .grain{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .ui{position:fixed;z-index:10;pointer-events:none}
+  .hd{top:34px;left:42px;opacity:0;animation:fd 1.6s ease .4s forwards}
+  .hd h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:11px;letter-spacing:8px;text-transform:uppercase;color:var(--s400)}
+  .hd .sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s500);margin-top:5px}
+  .fl{bottom:28px;left:42px;opacity:0;animation:fu 1.6s ease 1s forwards}
+  .fl span{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s500)}.fl em{color:var(--s300);font-style:normal}
+  .fr{bottom:28px;right:42px;text-align:right;opacity:0;animation:fu 1.6s ease 1.4s forwards}
+  .fr p{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--s600);line-height:2;text-transform:uppercase}
+  .mc{transition:opacity .7s}.mc.h{opacity:0}
 
-  :root {
-    --void: #050407;
-    --void-warm: #0a0810;
-    --silver-100: #f0ecf5;
-    --silver-200: #d4cee0;
-    --silver-300: #a89eb8;
-    --silver-400: #7a6f90;
-    --silver-500: #4d4460;
-    --silver-600: #2e2840;
-    --thread-glow: rgba(210,200,235,0.5);
-    --warm: #d4a574;
-    --warm-soft: #c49870;
-    --cool: #8b9fd4;
-    --violet: #b48fd4;
-    --violet-deep: #8a6aad;
-    --rose: #c47a8a;
-  }
+  /* Distance indicator */
+  .dist-ind{position:fixed;top:50%;right:42px;transform:translateY(-50%);z-index:10;pointer-events:none;opacity:0;animation:fu 2s ease 2s forwards}
+  .dist-bar{width:2px;height:180px;background:linear-gradient(to bottom,var(--s100),var(--violet),var(--rose),rgba(255,100,80,.8));border-radius:2px;position:relative;opacity:.25}
+  .dist-marker{position:absolute;left:-4px;width:10px;height:2px;background:var(--s100);border-radius:1px;transition:top .5s cubic-bezier(.16,1,.3,1)}
+  .dist-labels{position:absolute;left:14px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between}
+  .dist-labels span{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--s600);white-space:nowrap}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  #tip{position:fixed;z-index:50;pointer-events:none;opacity:0;transition:opacity .3s;max-width:320px}
+  #tip.vis{opacity:1}
+  .tp{background:rgba(6,4,12,.94);border:1px solid rgba(200,190,225,.08);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-radius:6px;padding:18px 22px;box-shadow:0 24px 70px rgba(0,0,0,.7),0 0 1px rgba(200,190,225,.15)}
+  .tp-t{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--violet);text-transform:uppercase;margin-bottom:7px}
+  .tp-u{font-family:'DM Mono',monospace;font-size:8px;color:var(--cool);opacity:.45;margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+  .tp-tl{font-family:'Playfair Display',serif;font-size:15px;line-height:1.4;color:var(--s100);margin-bottom:7px}
+  .tp-w{font-family:'Instrument Serif',serif;font-style:italic;font-size:13px;line-height:1.45;color:var(--warm);opacity:.75}
+  .tp-d{margin-top:10px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1.5px;color:var(--s600);text-transform:uppercase}
+  .tp-c{margin-top:8px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--s500)}.tp-c span{color:var(--s300)}
 
-  body {
-    background: var(--void);
-    color: var(--silver-100);
-    font-family: 'Playfair Display', Georgia, serif;
-    overflow: hidden;
-    height: 100vh;
-    width: 100vw;
-  }
+  #po{position:fixed;top:0;left:0;width:100%;height:100%;z-index:60;pointer-events:none;opacity:0}#po.on{opacity:1;pointer-events:all}#po canvas{width:100%;height:100%}
 
-  /* ===== CANVAS LAYERS ===== */
-  canvas#bg-field { position: fixed; top:0; left:0; width:100%; height:100%; z-index:1; }
-  canvas#threads { position: fixed; top:0; left:0; width:100%; height:100%; z-index:2; }
-  canvas#particles { position: fixed; top:0; left:0; width:100%; height:100%; z-index:3; }
-
-  .atmosphere {
-    position: fixed; top:0; left:0; width:100%; height:100%; z-index:4; pointer-events:none;
-    background:
-      radial-gradient(ellipse at 20% 30%, rgba(180,143,212,0.03) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 70%, rgba(139,159,212,0.025) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(5,4,7,0.6) 100%);
-  }
-
-  .grain {
-    position: fixed; top:0; left:0; width:100%; height:100%; z-index:5; pointer-events:none;
-    opacity: 0.03;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
-  /* ===== MAP VIEW (default) ===== */
-  #map-view {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    z-index: 10; pointer-events: none;
-    transition: opacity 0.8s ease;
-  }
-  #map-view.hidden { opacity:0; pointer-events:none; }
-
-  .header {
-    position: absolute; top: 36px; left: 44px;
-    opacity:0; animation: fadeSlideDown 1.5s ease 0.3s forwards;
-  }
-  .header h1 {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    font-size: 11px;
-    letter-spacing: 8px;
-    text-transform: uppercase;
-    color: var(--silver-400);
-  }
-  .header .sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    color: var(--silver-500);
-    margin-top: 6px;
-  }
-
-  .footer-left {
-    position: absolute; bottom: 32px; left: 44px;
-    opacity:0; animation: fadeSlideUp 1.5s ease 1.2s forwards;
-  }
-  .footer-left span {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    color: var(--silver-500);
-  }
-  .footer-left span em { color: var(--silver-300); font-style: normal; }
-
-  .footer-right {
-    position: absolute; bottom: 32px; right: 44px;
-    text-align: right;
-    opacity:0; animation: fadeSlideUp 1.5s ease 1.6s forwards;
-  }
-  .footer-right p {
-    font-family: 'DM Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 1.5px;
-    color: var(--silver-600);
-    line-height: 2;
-    text-transform: uppercase;
-  }
-
-  /* ===== TOOLTIP on hover ===== */
-  #tooltip {
-    position: fixed;
-    z-index: 50;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    max-width: 300px;
-  }
-  #tooltip.visible { opacity: 1; }
-
-  .tip-chrome {
-    background: rgba(10,8,16,0.92);
-    border: 1px solid rgba(200,190,225,0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 6px;
-    padding: 16px 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(180,143,212,0.04);
-  }
-
-  .tip-time {
-    font-family: 'DM Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 3px;
-    color: var(--violet);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .tip-url {
-    font-family: 'DM Mono', monospace;
-    font-size: 8px;
-    color: var(--cool);
-    opacity: 0.5;
-    margin-bottom: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 260px;
-  }
-  .tip-title {
-    font-family: 'Playfair Display', serif;
-    font-weight: 400;
-    font-size: 15px;
-    line-height: 1.4;
-    color: var(--silver-100);
-    margin-bottom: 8px;
-  }
-  .tip-whisper {
-    font-family: 'Instrument Serif', serif;
-    font-style: italic;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--warm);
-    opacity: 0.75;
-  }
-  .tip-cta {
-    margin-top: 12px;
-    font-family: 'DM Mono', monospace;
-    font-size: 7px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--silver-500);
-  }
-  .tip-cta span { color: var(--silver-300); }
-
-  /* ===== PORTAL TRANSITION ===== */
-  #portal-overlay {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0;
-  }
-  #portal-overlay.active {
-    opacity: 1;
-    pointer-events: all;
-  }
-  #portal-canvas {
-    width: 100%; height: 100%;
-  }
-
-  /* ===== VERSE VIEW (alternate life) ===== */
-  #verse-view {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    z-index: 80;
-    opacity: 0;
-    pointer-events: none;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background: var(--void);
-    transition: opacity 0.6s ease;
-  }
-  #verse-view.active {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  #verse-view::-webkit-scrollbar { width: 3px; }
-  #verse-view::-webkit-scrollbar-track { background: transparent; }
-  #verse-view::-webkit-scrollbar-thumb { background: var(--silver-600); border-radius: 2px; }
-
-  .verse-back {
-    position: fixed; top: 32px; left: 40px; z-index: 90;
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--silver-500);
-    cursor: pointer;
-    padding: 8px 14px;
-    border: 1px solid rgba(200,190,225,0.08);
-    border-radius: 3px;
-    background: rgba(10,8,16,0.8);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s;
-    display: none;
-  }
-  .verse-back:hover { color: var(--silver-200); border-color: var(--silver-400); }
-  .verse-back.visible { display: block; }
-
-  .verse-container {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 120px 40px 100px;
-  }
-
-  .verse-origin {
-    font-family: 'DM Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: var(--violet);
-    margin-bottom: 8px;
-    opacity:0; transform: translateY(12px);
-  }
-  .verse-origin.reveal { animation: revealUp 0.8s ease forwards; }
-
-  .verse-source-url {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    color: var(--cool);
-    opacity: 0.35;
-    margin-bottom: 32px;
-    opacity:0; transform: translateY(12px);
-  }
-  .verse-source-url.reveal { animation: revealUp 0.8s ease 0.1s forwards; }
-
-  .verse-title {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    font-size: 42px;
-    line-height: 1.2;
-    color: var(--silver-100);
-    margin-bottom: 12px;
-    opacity:0; transform: translateY(20px);
-  }
-  .verse-title.reveal { animation: revealUp 1s ease 0.2s forwards; }
-
-  .verse-subtitle {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    font-weight: 300;
-    font-size: 18px;
-    color: var(--warm);
-    opacity: 0.7;
-    margin-bottom: 50px;
-    opacity:0; transform: translateY(16px);
-  }
-  .verse-subtitle.reveal { animation: revealUp 0.8s ease 0.35s forwards; }
-
-  /* Video generation area */
-  .verse-video-area {
-    width: 100%;
-    aspect-ratio: 16/9;
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 50px;
-    border: 1px solid rgba(200,190,225,0.06);
-    opacity:0; transform: translateY(20px);
-  }
-  .verse-video-area.reveal { animation: revealUp 1s ease 0.45s forwards; }
-
-  .video-bg {
-    position: absolute; top:0; left:0; width:100%; height:100%;
-    background: linear-gradient(160deg, #0e0c16 0%, #0a0812 40%, #080610 100%);
-  }
-  .video-bg::after {
-    content: '';
-    position: absolute; top:0; left:0; width:100%; height:100%;
-    background:
-      radial-gradient(ellipse at 25% 35%, rgba(180,143,212,0.06) 0%, transparent 55%),
-      radial-gradient(ellipse at 75% 65%, rgba(139,159,212,0.04) 0%, transparent 55%);
-  }
-
-  .video-center {
-    position: absolute; top:50%; left:50%;
-    transform: translate(-50%, -50%);
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
-  }
-
-  .generate-btn {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    border: 1.5px solid var(--silver-500);
-    background: rgba(200,190,225,0.03);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-  }
-  .generate-btn:hover {
-    border-color: var(--warm);
-    box-shadow: 0 0 40px rgba(212,165,116,0.12), 0 0 80px rgba(212,165,116,0.05);
-    transform: scale(1.08);
-  }
-  .generate-btn:hover svg { fill: var(--warm); }
-  .generate-btn svg {
-    width: 18px; height: 18px;
-    fill: var(--silver-300);
-    margin-left: 3px;
-    transition: fill 0.3s;
-  }
-
-  .generate-btn.loading {
-    border-color: var(--violet);
-    animation: pulseRing 2s ease infinite;
-    pointer-events: none;
-  }
-  .generate-btn.loading svg { display: none; }
-  .generate-btn.loading::after {
-    content: '';
-    width: 18px; height: 18px;
-    border: 1.5px solid transparent;
-    border-top-color: var(--violet);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  .generate-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    color: var(--silver-500);
-    transition: color 0.3s;
-  }
-
-  .video-scanlines {
-    position: absolute; top:0; left:0; width:100%; height:100%;
-    pointer-events: none;
-    opacity: 0.015;
-    background: repeating-linear-gradient(
-      0deg, transparent, transparent 2px, rgba(200,190,225,0.1) 2px, rgba(200,190,225,0.1) 4px
-    );
-  }
-
-  /* Generated narrative area */
-  .verse-generated {
-    margin-bottom: 50px;
-    display: none;
-  }
-  .verse-generated.visible { display: block; }
-
-  .gen-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 7px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--violet-deep);
-    margin-bottom: 20px;
-  }
-
-  .gen-narrative {
-    font-family: 'Playfair Display', serif;
-    font-weight: 300;
-    font-size: 18px;
-    line-height: 1.85;
-    color: var(--silver-200);
-  }
-
-  .gen-narrative .sentence {
-    opacity: 0;
-    display: inline;
-  }
-  .gen-narrative .sentence.visible {
-    animation: sentenceFade 0.8s ease forwards;
-  }
-
-  /* Actions */
-  .verse-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin-bottom: 50px;
-    border-radius: 5px;
-    overflow: hidden;
-    opacity:0; transform: translateY(16px);
-  }
-  .verse-actions.reveal { animation: revealUp 0.8s ease 0.55s forwards; }
-
-  .v-action {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 16px 20px;
-    background: rgba(200,190,225,0.02);
-    color: var(--silver-400);
-    cursor: pointer;
-    transition: all 0.35s;
-    display: flex; justify-content: space-between; align-items: center;
-    border: none; width: 100%; text-align: left;
-  }
-  .v-action:hover {
-    background: rgba(212,165,116,0.04);
-    color: var(--silver-100);
-  }
-  .v-action .v-arrow {
-    opacity: 0; transform: translateX(-8px);
-    transition: all 0.35s;
-    color: var(--warm);
-  }
-  .v-action:hover .v-arrow {
-    opacity: 1; transform: translateX(0);
-  }
-
-  .v-action.pull:hover { background: rgba(212,165,116,0.06); }
-  .v-action.remix:hover { background: rgba(139,159,212,0.05); }
-  .v-action.letgo:hover { background: rgba(196,122,138,0.04); }
-  .v-action.remix:hover .v-arrow { color: var(--cool); }
-  .v-action.letgo:hover .v-arrow { color: var(--rose); }
-
-  /* Convergence */
-  .verse-convergence {
-    padding-top: 40px;
-    border-top: 1px solid rgba(200,190,225,0.05);
-    margin-bottom: 80px;
-    opacity:0; transform: translateY(16px);
-  }
-  .verse-convergence.reveal { animation: revealUp 0.8s ease 0.65s forwards; }
-
-  .conv-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 7px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: var(--violet);
-    margin-bottom: 16px;
-  }
-  .conv-text {
-    font-family: 'Instrument Serif', serif;
-    font-style: italic;
-    font-size: 20px;
-    line-height: 1.55;
-    color: var(--warm);
-    opacity: 0.75;
-  }
-
-  /* ===== ANIMATIONS ===== */
-  @keyframes fadeSlideDown {
-    from { opacity:0; transform: translateY(-10px); }
-    to { opacity:1; transform: translateY(0); }
-  }
-  @keyframes fadeSlideUp {
-    from { opacity:0; transform: translateY(10px); }
-    to { opacity:1; transform: translateY(0); }
-  }
-  @keyframes revealUp {
-    from { opacity:0; transform: translateY(16px); }
-    to { opacity:1; transform: translateY(0); }
-  }
-  @keyframes sentenceFade {
-    from { opacity:0; }
-    to { opacity:1; }
-  }
-  @keyframes pulseRing {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(180,143,212,0.2); }
-    50% { box-shadow: 0 0 0 15px rgba(180,143,212,0); }
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Cursor */
-  #map-view:not(.hidden) ~ * { cursor: default; }
-  body.on-map { cursor: crosshair; }
+  #vv{position:fixed;top:0;left:0;width:100%;height:100%;z-index:50;opacity:0;pointer-events:none;overflow-y:auto;overflow-x:hidden;background:var(--void);transition:opacity .5s}
+  #vv.on{opacity:1;pointer-events:all}#vv::-webkit-scrollbar{width:3px}#vv::-webkit-scrollbar-thumb{background:var(--s600);border-radius:2px}#vv::-webkit-scrollbar-track{background:transparent}
+  .vb{position:fixed;top:30px;left:38px;z-index:55;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--s500);cursor:pointer;padding:8px 14px;border:1px solid rgba(200,190,225,.07);border-radius:3px;background:rgba(6,4,12,.85);backdrop-filter:blur(12px);transition:all .3s;display:none}.vb:hover{color:var(--s200);border-color:var(--s400)}.vb.vis{display:block}
+  .vc{max-width:620px;margin:0 auto;padding:110px 36px 100px}
+  .vo{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--violet);margin-bottom:7px;opacity:0;transform:translateY(14px)}
+  .vurl{font-family:'DM Mono',monospace;font-size:9px;color:var(--cool);opacity:0;margin-bottom:30px;transform:translateY(14px)}
+  .vtit{font-family:'Instrument Serif',serif;font-weight:400;font-size:42px;line-height:1.18;color:var(--s100);margin-bottom:10px;opacity:0;transform:translateY(22px)}
+  .vsub{font-family:'Playfair Display',serif;font-style:italic;font-weight:300;font-size:18px;color:var(--warm);opacity:0;margin-bottom:48px;transform:translateY(16px)}
+  .rv{animation:ru .9s ease forwards}
+  .va-w{width:100%;aspect-ratio:16/9;border-radius:6px;position:relative;overflow:hidden;margin-bottom:48px;border:1px solid rgba(200,190,225,.05);opacity:0;transform:translateY(18px)}.va-w.rv{animation:ru 1s ease forwards}
+  .vbg{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(155deg,#0d0b15,#080611)}.vbg::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(180,143,212,.055) 0%,transparent 55%),radial-gradient(ellipse at 70% 60%,rgba(139,159,212,.04) 0%,transparent 55%)}
+  .vctr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:13px}
+  .gb{width:62px;height:62px;border-radius:50%;border:1.5px solid var(--s500);background:rgba(200,190,225,.025);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .5s cubic-bezier(.16,1,.3,1)}
+  .gb:hover{border-color:var(--warm);box-shadow:0 0 45px rgba(212,165,116,.12);transform:scale(1.08)}.gb:hover svg{fill:var(--warm)}
+  .gb svg{width:17px;height:17px;fill:var(--s300);margin-left:3px;transition:fill .3s}
+  .gb.ld{border-color:var(--violet);animation:pu 2s ease infinite;pointer-events:none}.gb.ld svg{display:none}.gb.ld::after{content:'';width:17px;height:17px;border:1.5px solid transparent;border-top-color:var(--violet);border-radius:50%;animation:sp .8s linear infinite}
+  .gl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--s500)}
+  .scn{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:.012;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(200,190,225,.08) 2px,rgba(200,190,225,.08) 4px)}
+  .ga{margin-bottom:48px;display:none}.ga.vis{display:block}
+  .ga-l{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--vd);margin-bottom:18px}
+  .ga-n{font-family:'Playfair Display',serif;font-weight:300;font-size:18px;line-height:1.85;color:var(--s200)}
+  .ga-n .sn{opacity:0;display:inline}.ga-n .sn.vis{animation:sf .8s ease forwards}
+  .acts{display:flex;flex-direction:column;gap:1px;margin-bottom:48px;border-radius:5px;overflow:hidden;opacity:0;transform:translateY(14px)}.acts.rv{animation:ru .8s ease forwards}
+  .ab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:15px 18px;background:rgba(200,190,225,.018);color:var(--s400);cursor:pointer;transition:all .35s;display:flex;justify-content:space-between;align-items:center;border:none;width:100%;text-align:left}
+  .ab:hover{background:rgba(212,165,116,.04);color:var(--s100)}.ab .ar{opacity:0;transform:translateX(-8px);transition:all .35s;color:var(--warm)}.ab:hover .ar{opacity:1;transform:translateX(0)}
+  .ab.rx:hover{background:rgba(139,159,212,.04)}.ab.rx:hover .ar{color:var(--cool)}.ab.lg:hover{background:rgba(196,122,138,.035)}.ab.lg:hover .ar{color:var(--rose)}
+  .cv{padding-top:38px;border-top:1px solid rgba(200,190,225,.045);margin-bottom:80px;opacity:0;transform:translateY(14px)}.cv.rv{animation:ru .8s ease forwards}
+  .cv-l{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:4px;text-transform:uppercase;color:var(--violet);margin-bottom:14px}
+  .cv-t{font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;line-height:1.55;color:var(--warm);opacity:.75}
+  @keyframes fd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes ru{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes sf{from{opacity:0}to{opacity:1}}
+  @keyframes pu{0%,100%{box-shadow:0 0 0 0 rgba(180,143,212,.2)}50%{box-shadow:0 0 0 16px rgba(180,143,212,0)}}
+  @keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
-<body class="on-map">
-
-<!-- Canvas layers -->
-<canvas id="bg-field"></canvas>
-<canvas id="threads"></canvas>
-<canvas id="particles"></canvas>
-<div class="atmosphere"></div>
+<body>
+<canvas id="c"></canvas>
+<div class="vig"></div>
 <div class="grain"></div>
 
-<!-- Portal transition overlay -->
-<div id="portal-overlay"><canvas id="portal-canvas"></canvas></div>
+<div class="ui hd mc"><h1>Verse Walker</h1><div class="sub">The white center is you. The further out you go, the stranger the life.</div></div>
+<div class="ui fl mc"><span><em id="st">0</em> threads · <em id="sv">0</em> verses · distance: <em id="sd">0</em></span></div>
+<div class="ui fr mc"><p>Drag to orbit · Scroll to zoom</p><p>Explore outward — it never ends</p></div>
 
-<!-- Map View -->
-<div id="map-view">
-  <div class="header">
-    <h1>Verse Walker</h1>
-    <div class="sub">Alternate lives, threaded from what you searched for</div>
-  </div>
-  <div class="footer-left">
-    <span><em id="s-threads">0</em> threads · <em id="s-verses">0</em> verses detected</span>
-  </div>
-  <div class="footer-right">
-    <p>Hover to see a memory</p>
-    <p>Click to enter its timeline</p>
+<div class="dist-ind mc">
+  <div class="dist-bar"><div class="dist-marker" id="dm"></div></div>
+  <div class="dist-labels">
+    <span>You now</span>
+    <span>Adjacent</span>
+    <span>Divergent</span>
+    <span>Unrecognizable</span>
   </div>
 </div>
 
-<!-- Tooltip -->
-<div id="tooltip">
-  <div class="tip-chrome">
-    <div class="tip-time" id="t-time"></div>
-    <div class="tip-url" id="t-url"></div>
-    <div class="tip-title" id="t-title"></div>
-    <div class="tip-whisper" id="t-whisper"></div>
-    <div class="tip-cta"><span>Click</span> to enter this verse</div>
-  </div>
+<div id="tip"><div class="tp">
+  <div class="tp-t" id="tt"></div><div class="tp-u" id="tu"></div>
+  <div class="tp-tl" id="ttl"></div><div class="tp-w" id="tw"></div>
+  <div class="tp-d" id="td"></div>
+  <div class="tp-c"><span>Click</span> to enter this verse</div>
+</div></div>
+
+<div id="po"><canvas id="pc"></canvas></div>
+<div id="vv">
+  <button class="vb" id="vb" onclick="exitV()">← Return to map</button>
+  <div class="vc" id="vvc"></div>
 </div>
 
-<!-- Verse View -->
-<div id="verse-view">
-  <button class="verse-back" id="verse-back" onclick="exitVerse()">← Return to map</button>
-  <div class="verse-container" id="verse-container"></div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ============================================================
-// DATA
-// ============================================================
-const memories = [
-  {
-    year: "2018", month: "Mar",
-    url: "sfballet.org/season/swan-lake-tickets",
-    title: "Two tickets to Swan Lake, never purchased",
-    whisper: "You almost asked someone. You typed their name and closed the tab.",
-    tags: ["intimacy", "hesitation"],
-    color: [196, 122, 138],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE YOU SAID YES TO BEAUTY",
-      title: "You Went to the Ballet",
-      subtitle: "A life that began with two tickets and a name you almost typed",
-      convergence: "Across 7 of your timelines, the turning point is never the big decision — it's the small one you almost didn't make.",
-      prompt: "Write a deeply cinematic, poetic 150-word narrative about an alternate life where someone actually bought ballet tickets and invited the person they were afraid to ask. That evening cracked something open — vulnerability, beauty, saying yes to what terrifies you. The tone should be intimate, specific, melancholic but hopeful. Use sensory details — light, fabric, sound. Write in second person ('you'). No clichés. Every sentence should feel like it costs something."
-    }
-  },
-  {
-    year: "2019", month: "Aug",
-    url: "airbnb.com/rooms/lisbon-alfama-artist-studio",
-    title: "Artist studio in Alfama — saved but never booked",
-    whisper: "You bookmarked it three separate times over two years.",
-    tags: ["longing", "elsewhere"],
-    color: [139, 159, 212],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE YOU LEFT",
-      title: "The Lisbon Summer",
-      subtitle: "Thirty days in a tile-walled studio with afternoon light",
-      convergence: "In every timeline where you leave, you find the same thing: yourself without context. That's what you keep searching for.",
-      prompt: "Write a deeply cinematic, poetic 150-word narrative about an alternate life where someone actually booked the Lisbon artist studio for a month. Describe the specific textures — tiles, light, narrow streets, the smell of coffee and sea air. They wrote differently there. They became someone without a resume, without context. The tone should be aching and free. Second person. Sensory and specific. Every sentence should carry weight."
-    }
-  },
-  {
-    year: "2020", month: "Nov",
-    url: "google.com/search?q=is+it+too+late+to+change+careers+at+27",
-    title: "\"Is it too late to change careers at 27\"",
-    whisper: "Searched at 2:47am. Also: 'careers that feel like play.'",
-    tags: ["2:47am", "crossroads"],
-    color: [212, 165, 116],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE THE SEARCH WAS THE LAST ONE",
-      title: "You Closed the Laptop and Made the Call",
-      subtitle: "The difference between your timelines happens at 2:48am",
-      convergence: "The 2:47am searches appear in every single timeline. The difference is what happens at 2:48.",
-      prompt: "Write a deeply cinematic 150-word narrative about an alternate life where someone stopped googling their existential crisis at 2:47am and instead took action — called someone they admired, said 'I don't know what I'm doing.' Describe the terrifying aliveness of admitting you're lost. The rebuilding that followed was ugly and uncertain and real. Second person, intimate. Poetic but grounded. The kind of writing that makes someone's chest tight."
-    }
-  },
-  {
-    year: "2021", month: "May",
-    url: "dhamma.org/en/schedules/vipassana-10-day",
-    title: "10-day silent retreat — application left open 3 weeks",
-    whisper: "You filled everything except the emergency contact field.",
-    tags: ["silence", "almost"],
-    color: [180, 143, 212],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE YOU SAT WITH IT",
-      title: "Ten Days of Nothing",
-      subtitle: "You came home different. Not better. Softer.",
-      convergence: "The body keeps appearing in your timelines. Every version of you is trying to come home to the same place.",
-      prompt: "Write a deeply cinematic 150-word narrative about an alternate life where someone actually completed the 10-day silent meditation retreat. Day four broke them open — tears about their father stored in their shoulders for years. Day seven they laughed at nothing for 40 minutes. They came home softer, not fixed, just finally listening. Second person. Embodied and raw. Spiritual without being precious."
-    }
-  },
-  {
-    year: "2017", month: "Oct",
-    url: "github.com/new — repo: 'dream-journal-ai'",
-    title: "dream-journal-ai — 3 commits, then silence",
-    whisper: "The last commit message: 'this might actually be something.'",
-    tags: ["creation", "abandoned"],
-    color: [116, 190, 170],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE YOU SHIPPED IT",
-      title: "The Thing You Almost Built",
-      subtitle: "It wasn't the app. It was learning you could finish.",
-      convergence: "You keep starting things. In the timelines where you finish them, the quality doesn't matter — the completion rewires your relationship with yourself.",
-      prompt: "Write a deeply cinematic 150-word narrative about an alternate life where someone pushed past commit #3 on their weird side project. It was messy and strange. Someone called it 'weird' and they heard it as 'new.' The project itself didn't matter — what mattered was proving they could finish something from the strange part of their brain. Second person. Write about creation as an act of self-trust."
-    }
-  },
-  {
-    year: "2022", month: "Feb",
-    url: "maps.google.com/dir/pacific-heights/half-moon-bay",
-    title: "Directions to Half Moon Bay — checked 14 times",
-    whisper: "You never went. But you kept measuring the distance.",
-    tags: ["distance", "ritual"],
-    color: [100, 160, 200],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE YOU DROVE",
-      title: "The Ocean at the End of the Search",
-      subtitle: "Stillness isn't the opposite of action. It's the prerequisite.",
-      convergence: "Stillness isn't the opposite of action in your multiverse. It's the prerequisite.",
-      prompt: "Write a deeply cinematic 150-word narrative about an alternate life where someone finally drove to the ocean they kept googling directions to. Highway 1. Fog. They turned the music off. At the beach they sat on a rock and their brain stopped optimizing for the first time. They went back every week. The rock became where they made their best decisions — not by thinking, by stopping. Second person. Atmospheric and quiet."
-    }
-  },
-  {
-    year: "2023", month: "Jul",
-    url: "letterboxd.com/list/films-about-people-who-disappear",
-    title: "\"Films about people who disappear\" — 23 films curated",
-    whisper: "You watched seven in one weekend.",
-    tags: ["dissolving", "fantasy"],
-    color: [160, 130, 180],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE YOU UNDERSTOOD THE PATTERN",
-      title: "What the Disappearing Was About",
-      subtitle: "You didn't want to vanish. You wanted to be found.",
-      convergence: "Every timeline has this moment: where you stop performing your absence and start risking your presence.",
-      prompt: "Write a deeply cinematic 150-word narrative about an alternate life where someone realized their obsession with films about disappearing was really about wanting to be found — specifically, found by someone who noticed they were gone. Once they understood this, they stopped hiding. They showed up visibly, loudly. Second person. Psychologically sharp. The tone of sudden self-recognition."
-    }
-  },
-  {
-    year: "2019", month: "Dec",
-    url: "docs.google.com/document/d/untitled-letter-never-sent",
-    title: "Untitled Google Doc — 4,200 words, never shared",
-    whisper: "It started as 'Dear —' and you never filled in the name.",
-    tags: ["unsent", "4200 words"],
-    color: [200, 160, 130],
-    alt: {
-      label: "ALTERNATE VERSE — THE TIMELINE WHERE YOU HIT SEND",
-      title: "The Letter That Changed the Shape",
-      subtitle: "Your unsent messages outnumber your sent ones 3:1. The ratio is the story.",
-      convergence: "Your unsent messages outnumber your sent ones 3:1 across all timelines. The ratio is the story.",
-      prompt: "Write a deeply cinematic 150-word narrative about an alternate life where someone finally sent the 4,200-word letter they'd been writing to someone whose name they couldn't bring themselves to type. The response came three days later — smaller and more honest than any version they'd rehearsed. Not a resolution. A beginning. Sending it proved they could say the true thing. Second person. Tender and precise."
-    }
-  }
+// ============ DATA — ordered by distance (close = realistic, far = wild) ============
+const ZONES = ['Close — a version of you that almost happened','Adjacent — a familiar life, tilted','Divergent — you might not recognize yourself','Far reach — barely you anymore','Outer rim — a stranger with your eyes'];
+
+const D = [
+  // ZONE 1: CLOSE (r ~ 4-6)
+  {y:"2022",mo:"Feb",url:"maps.google.com/dir/pacific-heights/half-moon-bay",t:"Directions to Half Moon Bay — checked 14 times",w:"You never went. You kept measuring the distance.",c:[60,200,255],zone:0,dist:4.5,
+   a:{l:"CLOSE VERSE — A SUNDAY DRIVE YOU NEVER TOOK",t:"The Ocean at the End of the Search",s:"Stillness isn't the opposite of action. It's the prerequisite.",cv:"Stillness isn't the opposite of action in your multiverse. It's the prerequisite.",p:"Write a deeply cinematic 150-word narrative about someone who finally drove to the ocean they kept googling. Highway 1, fog, music off. Brain stopped optimizing. Second person. Return ONLY prose. 6-8 sentences."}},
+  {y:"2019",mo:"Dec",url:"docs.google.com/d/untitled-letter-never-sent",t:"Untitled Google Doc — 4,200 words, never shared",w:"It started 'Dear —' and you never filled in the name.",c:[255,190,70],zone:0,dist:5.2,
+   a:{l:"CLOSE VERSE — THE LETTER THAT CHANGED THE SHAPE",t:"The Letter You Sent",s:"Your unsent messages outnumber sent 3:1.",cv:"Your unsent messages outnumber your sent ones 3:1. The ratio is the story.",p:"Write a deeply cinematic 150-word narrative about someone who sent the 4,200-word letter. Response came three days later — smaller, more honest than rehearsed. Second person. Return ONLY prose. 6-8 sentences."}},
+  // ZONE 2: ADJACENT (r ~ 8-11)
+  {y:"2018",mo:"Mar",url:"sfballet.org/season/swan-lake-tickets",t:"Two tickets to Swan Lake, never purchased",w:"You typed their name into the guest field and closed the tab.",c:[255,70,130],zone:1,dist:8.5,
+   a:{l:"ADJACENT VERSE — YOU SAID YES TO BEAUTY",t:"You Went to the Ballet",s:"A life that began with two tickets and a name you almost typed",cv:"Across 7 of your timelines, the turning point is the small decision you almost didn't make.",p:"Write a deeply cinematic 150-word narrative about an alternate life where someone bought ballet tickets and invited the person they feared to ask. Vulnerability cracked open. Sensory. Second person. Return ONLY prose. 6-8 sentences."}},
+  {y:"2020",mo:"Nov",url:"google.com/search?q=is+it+too+late+to+change+careers+at+27",t:"\"Is it too late to change careers at 27\"",w:"Searched at 2:47am. Also: 'careers that feel like play.'",c:[255,160,30],zone:1,dist:10,
+   a:{l:"ADJACENT VERSE — THE SEARCH WAS THE LAST ONE",t:"You Closed the Laptop and Made the Call",s:"The difference between timelines happens at 2:48am",cv:"The 2:47am searches appear in every timeline. The difference is what happens at 2:48.",p:"Write a deeply cinematic 150-word narrative about someone who stopped googling existential crisis at 2:47am and took action. Terrifying aliveness. Second person. Return ONLY prose. 6-8 sentences."}},
+  // ZONE 3: DIVERGENT (r ~ 14-18)
+  {y:"2019",mo:"Aug",url:"airbnb.com/rooms/lisbon-alfama-artist-studio",t:"Artist studio in Alfama — saved but never booked",w:"You bookmarked it three separate times over two years.",c:[50,120,255],zone:2,dist:15,
+   a:{l:"DIVERGENT VERSE — YOU LEFT EVERYTHING",t:"The Lisbon Summer",s:"Thirty days in a tile-walled studio with afternoon light",cv:"In every timeline where you leave, you find yourself without context.",p:"Write a deeply cinematic 150-word narrative about someone who booked the Lisbon artist studio for a month. Tiles, light, narrow streets. Wrote differently there. Second person. Return ONLY prose. 6-8 sentences."}},
+  {y:"2021",mo:"May",url:"dhamma.org/en/schedules/vipassana-10-day",t:"10-day silent retreat — application left open 3 weeks",w:"Everything filled except the emergency contact field.",c:[180,60,255],zone:2,dist:16.5,
+   a:{l:"DIVERGENT VERSE — YOU SAT WITH THE SILENCE",t:"Ten Days of Nothing",s:"You came home different. Not better. Softer.",cv:"The body keeps appearing. Every version of you is trying to come home to the same place.",p:"Write a deeply cinematic 150-word narrative about someone who completed a 10-day silent retreat. Day four broke them. Day seven, laughing at nothing. Second person. Return ONLY prose. 6-8 sentences."}},
+  // ZONE 4: FAR REACH (r ~ 22-28)
+  {y:"2017",mo:"Oct",url:"github.com/new — repo: 'dream-journal-ai'",t:"dream-journal-ai — 3 commits, then silence",w:"Last commit: 'this might actually be something.'",c:[30,230,140],zone:3,dist:24,
+   a:{l:"FAR REACH — YOU BECAME THE BUILDER",t:"The Thing You Almost Built",s:"It wasn't the app. It was learning you could finish.",cv:"In timelines where you finish things, the completion rewires your self-trust.",p:"Write a deeply cinematic 150-word narrative about someone who pushed past commit #3 and built something wild and strange that changed the trajectory of their career. Creation as identity. Second person. Return ONLY prose. 6-8 sentences."}},
+  {y:"2023",mo:"Jul",url:"letterboxd.com/list/films-about-people-who-disappear",t:"\"Films about people who disappear\" — 23 films",w:"You watched seven in one weekend.",c:[220,50,220],zone:3,dist:26,
+   a:{l:"FAR REACH — YOU UNDERSTOOD THE PATTERN",t:"What the Disappearing Was About",s:"You didn't want to vanish. You wanted to be found.",cv:"Every timeline has this: you stop performing absence and start risking presence.",p:"Write a deeply cinematic 150-word narrative about someone who realized their disappearing obsession was about wanting to be found. Psychological self-recognition. Second person. Return ONLY prose. 6-8 sentences."}},
+  // ZONE 5: OUTER RIM — procedurally implied (r ~ 35+)
+  {y:"2016",mo:"Jun",url:"craigslist.org/van-conversion-sprinter-diy",t:"DIY van conversion guide — 47 tabs open simultaneously",w:"You priced out solar panels at 3am on a Tuesday.",c:[255,80,40],zone:4,dist:38,
+   a:{l:"OUTER RIM — A STRANGER WITH YOUR EYES",t:"The Year You Lived in a Van",s:"No address. No Wi-Fi. No excuse not to become yourself.",cv:"In the most distant timelines, you have the least and feel the most.",p:"Write a deeply cinematic 150-word narrative about someone who sold everything and lived in a converted van for a year. Radical simplicity. They became someone unrecognizable to their former self — freer, wilder, more honest. Second person. Return ONLY prose. 6-8 sentences."}},
+  {y:"2015",mo:"Sep",url:"juilliard.edu/admissions/acting-mfa-application",t:"Juilliard MFA Acting — application PDF downloaded twice",w:"You never told anyone you downloaded it.",c:[255,40,90],zone:4,dist:45,
+   a:{l:"OUTER RIM — THE LIFE ON STAGE",t:"You Auditioned",s:"The version of you that chose art over certainty.",cv:"In the furthest timelines, the thing you're most afraid of is the thing that saves you.",p:"Write a deeply cinematic 150-word narrative about someone who secretly applied to Juilliard for acting, got in, and left their entire career behind. The terror and aliveness of choosing art. Second person. Return ONLY prose. 6-8 sentences."}}
 ];
 
-// ============================================================
-// CANVAS SETUP
-// ============================================================
-const bgCanvas = document.getElementById('bg-field');
-const bgCtx = bgCanvas.getContext('2d');
-const threadCanvas = document.getElementById('threads');
-const threadCtx = threadCanvas.getContext('2d');
-const partCanvas = document.getElementById('particles');
-const partCtx = partCanvas.getContext('2d');
-const portalCanvas = document.getElementById('portal-canvas');
-const portalCtx = portalCanvas.getContext('2d');
+// ============ THREE SETUP ============
+const canvas=document.getElementById('c');
+const R=new THREE.WebGLRenderer({canvas,antialias:true});
+R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,2));
+R.setClearColor(0x030206);R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.4;
 
-let W, H, time = 0, mouseX = -1000, mouseY = -1000;
-let hoveredNode = null, activeVerse = null;
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x030206,0.004);
+const cam=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,4000);
+cam.position.set(0,8,20);
 
-function resize() {
-  W = window.innerWidth; H = window.innerHeight;
-  [bgCanvas, threadCanvas, partCanvas, portalCanvas].forEach(c => {
-    c.width = W; c.height = H;
-  });
-}
-window.addEventListener('resize', () => { resize(); buildGraph(); });
-resize();
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
 
-// ============================================================
-// GRAPH — Nodes & Threads
-// ============================================================
-let memNodes = [], bgNodes = [], allThreads = [];
-const centerX = () => W * 0.5;
-const centerY = () => H * 0.5;
+// ============ CAMERA — infinite drag ============
+let camTheta=0,camPhi=Math.PI*.28,camDist=22,targetDist=22;
+let dragging=false,pmx=0,pmy=0,autoRot=true,autoTimer=null;
+let mx=0,my=0;
 
-class MemNode {
-  constructor(x, y, idx) {
-    this.bx = x; this.by = y; this.x = x; this.y = y;
-    this.idx = idx;
-    this.r = 5;
-    this.phase = Math.random() * Math.PI * 2;
-    this.col = memories[idx].color;
-    this.hoverAmt = 0;
-  }
-  update(t) {
-    const dx = mouseX - this.x, dy = mouseY - this.y;
-    const dist = Math.sqrt(dx*dx+dy*dy);
-    const pull = Math.max(0, 1 - dist/220);
-    this.x = this.bx + Math.sin(t*0.28+this.phase)*12 + dx*pull*0.04;
-    this.y = this.by + Math.cos(t*0.22+this.phase)*10 + dy*pull*0.04;
-    const isHover = dist < 45;
-    this.hoverAmt += (isHover ? 1 : 0 - this.hoverAmt) * 0.08;
-    if (isHover) hoveredNode = this;
-  }
-  draw(t) {
-    const pulse = 0.5 + 0.5*Math.sin(t*0.7+this.phase);
-    const h = this.hoverAmt;
-    const [r,g,b] = this.col;
+canvas.addEventListener('mousedown',e=>{if(activeV!==null)return;dragging=true;pmx=e.clientX;pmy=e.clientY;autoRot=false;clearTimeout(autoTimer)});
+addEventListener('mouseup',()=>{dragging=false;autoTimer=setTimeout(()=>autoRot=true,4000)});
+addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  ptr.x=(e.clientX/innerWidth)*2-1;ptr.y=-(e.clientY/innerHeight)*2+1;
+  if(dragging){camTheta-=(e.clientX-pmx)*.004;camPhi-=(e.clientY-pmy)*.004;camPhi=Math.max(.08,Math.min(Math.PI-.08,camPhi));pmx=e.clientX;pmy=e.clientY}
+});
+// NO distance limits — infinite zoom
+canvas.addEventListener('wheel',e=>{if(activeV!==null)return;targetDist+=e.deltaY*.02;targetDist=Math.max(3,targetDist);e.preventDefault()},{passive:false});
 
-    // Outer aura
-    const aR = this.r * (5 + h*8);
-    const aGrad = threadCtx.createRadialGradient(this.x,this.y,0,this.x,this.y,aR);
-    aGrad.addColorStop(0, `rgba(${r},${g},${b},${0.08*pulse + h*0.15})`);
-    aGrad.addColorStop(0.4, `rgba(${r},${g},${b},${0.02*pulse})`);
-    aGrad.addColorStop(1, 'transparent');
-    threadCtx.fillStyle = aGrad;
-    threadCtx.beginPath();
-    threadCtx.arc(this.x, this.y, aR, 0, Math.PI*2);
-    threadCtx.fill();
+function updateCam(){
+  if(autoRot)camTheta+=.0008;
+  camDist+=(targetDist-camDist)*.06;
+  cam.position.x=camDist*Math.sin(camPhi)*Math.sin(camTheta);
+  cam.position.y=camDist*Math.cos(camPhi);
+  cam.position.z=camDist*Math.sin(camPhi)*Math.cos(camTheta);
+  cam.lookAt(0,0,0);
 
-    // Ring
-    if (h > 0.05) {
-      threadCtx.strokeStyle = `rgba(${r},${g},${b},${h*0.3})`;
-      threadCtx.lineWidth = 1;
-      threadCtx.beginPath();
-      threadCtx.arc(this.x, this.y, this.r*(2.5+h*2), 0, Math.PI*2);
-      threadCtx.stroke();
-    }
-
-    // Core
-    const coreGrad = threadCtx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.r*(1+h*0.6));
-    coreGrad.addColorStop(0, `rgba(240,236,245,${0.7+pulse*0.3})`);
-    coreGrad.addColorStop(0.6, `rgba(${r},${g},${b},${0.5+h*0.3})`);
-    coreGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-    threadCtx.fillStyle = coreGrad;
-    threadCtx.beginPath();
-    threadCtx.arc(this.x, this.y, this.r*(1+h*0.6), 0, Math.PI*2);
-    threadCtx.fill();
-  }
+  // Update distance indicator
+  const norm=Math.min(1,Math.max(0,(camDist-5)/60));
+  document.getElementById('dm').style.top=(norm*170)+'px';
+  document.getElementById('sd').textContent=camDist.toFixed(1);
 }
 
-class BgNode {
-  constructor() {
-    this.bx = Math.random()*W; this.by = Math.random()*H;
-    this.x = this.bx; this.y = this.by;
-    this.phase = Math.random()*Math.PI*2;
-    this.r = 0.8 + Math.random()*1.2;
-    this.brightness = 0.15 + Math.random()*0.25;
-  }
-  update(t) {
-    this.x = this.bx + Math.sin(t*0.15+this.phase)*5;
-    this.y = this.by + Math.cos(t*0.12+this.phase)*4;
-  }
-  draw() {
-    threadCtx.fillStyle = `rgba(200,190,225,${this.brightness})`;
-    threadCtx.beginPath();
-    threadCtx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-    threadCtx.fill();
-  }
-}
+// ============ CENTRAL CORE — "YOU" ============
+const coreGroup=new THREE.Group();scene.add(coreGroup);
+const coreGeo=new THREE.SphereGeometry(.55,64,64);
+const coreMat=new THREE.MeshBasicMaterial({color:0xffffff});
+const coreMesh=new THREE.Mesh(coreGeo,coreMat);coreGroup.add(coreMesh);
 
-class SilverThread {
-  constructor(a, b, opacity) {
-    this.a = a; this.b = b;
-    this.cp1 = { x:(Math.random()-0.5)*180, y:(Math.random()-0.5)*180 };
-    this.cp2 = { x:(Math.random()-0.5)*180, y:(Math.random()-0.5)*180 };
-    this.phase = Math.random()*Math.PI*2;
-    this.baseOpacity = opacity || (0.04 + Math.random()*0.08);
-  }
-  draw(t) {
-    const ax=this.a.x, ay=this.a.y, bx=this.b.x, by=this.b.y;
-    const mx=(ax+bx)/2, my=(ay+by)/2;
-    const cx1=mx+this.cp1.x+Math.sin(t*0.18+this.phase)*25;
-    const cy1=my+this.cp1.y+Math.cos(t*0.14+this.phase)*25;
-    const cx2=mx+this.cp2.x+Math.cos(t*0.16+this.phase)*25;
-    const cy2=my+this.cp2.y+Math.sin(t*0.2+this.phase)*25;
-    const mdx=mouseX-mx, mdy=mouseY-my;
-    const md=Math.sqrt(mdx*mdx+mdy*mdy);
-    const mi=Math.max(0,1-md/280);
-    const alpha = this.baseOpacity + mi*0.12;
-
-    // Determine color from connected memory nodes
-    let col = '200,190,225';
-    if (this.a.col) col = this.a.col.join(',');
-    else if (this.b.col) col = this.b.col.join(',');
-
-    threadCtx.strokeStyle = `rgba(${col},${alpha})`;
-    threadCtx.lineWidth = 0.4 + mi*1;
-    threadCtx.beginPath();
-    threadCtx.moveTo(ax, ay);
-    threadCtx.bezierCurveTo(cx1, cy1, cx2, cy2, bx, by);
-    threadCtx.stroke();
-  }
-}
-
-// Floating dust particles
-let dustParticles = [];
-class Dust {
-  constructor() { this.reset(); }
-  reset() {
-    this.x = Math.random()*W;
-    this.y = Math.random()*H;
-    this.vx = (Math.random()-0.5)*0.15;
-    this.vy = -0.05 - Math.random()*0.15;
-    this.life = 1;
-    this.decay = 0.0005 + Math.random()*0.001;
-    this.r = 0.3 + Math.random()*0.7;
-  }
-  update() {
-    this.x += this.vx; this.y += this.vy;
-    this.life -= this.decay;
-    if (this.life <= 0) this.reset();
-  }
-  draw() {
-    partCtx.fillStyle = `rgba(210,200,235,${this.life*0.2})`;
-    partCtx.beginPath();
-    partCtx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-    partCtx.fill();
-  }
-}
-
-function buildGraph() {
-  memNodes = []; bgNodes = []; allThreads = []; dustParticles = [];
-  const cx = centerX(), cy = centerY();
-
-  // Center phantom node
-  const phantom = { x: cx, y: cy, bx: cx, by: cy, phase: 0, update(){
-    this.x = this.bx + Math.sin(time*0.1)*3; this.y = this.by + Math.cos(time*0.08)*3;
-  }};
-
-  memories.forEach((m, i) => {
-    const angle = (i / memories.length)*Math.PI*2 - Math.PI/2 + (Math.random()-0.5)*0.25;
-    const dist = Math.min(W,H) * (0.22 + Math.random()*0.12);
-    const x = cx + Math.cos(angle)*dist;
-    const y = cy + Math.sin(angle)*dist;
-    const node = new MemNode(x, y, i);
-    memNodes.push(node);
-    allThreads.push(new SilverThread(phantom, node, 0.06+Math.random()*0.06));
-  });
-
-  // Cross-connections
-  for (let i=0; i<memNodes.length; i++) {
-    const j = (i+1) % memNodes.length;
-    allThreads.push(new SilverThread(memNodes[i], memNodes[j], 0.025+Math.random()*0.03));
-    if (Math.random()>0.5) {
-      const k = (i+3) % memNodes.length;
-      allThreads.push(new SilverThread(memNodes[i], memNodes[k], 0.015+Math.random()*0.02));
-    }
-  }
-
-  // Background stars
-  for (let i=0; i<50; i++) {
-    const bg = new BgNode();
-    bgNodes.push(bg);
-    if (Math.random()>0.55) {
-      const nearest = memNodes[Math.floor(Math.random()*memNodes.length)];
-      allThreads.push(new SilverThread(bg, nearest, 0.01+Math.random()*0.025));
-    }
-  }
-
-  // Dust
-  for (let i=0; i<80; i++) dustParticles.push(new Dust());
-
-  document.getElementById('s-threads').textContent = allThreads.length;
-  document.getElementById('s-verses').textContent = memories.length;
-
-  // Store phantom for updates
-  buildGraph._phantom = phantom;
-}
-buildGraph();
-
-// ============================================================
-// BACKGROUND FIELD — subtle nebula
-// ============================================================
-function drawBgField() {
-  bgCtx.clearRect(0,0,W,H);
-  // Slow-moving subtle color blobs
-  const cx = W*0.5, cy = H*0.5;
-  const g1 = bgCtx.createRadialGradient(
-    cx + Math.sin(time*0.04)*80, cy + Math.cos(time*0.03)*60, 0,
-    cx, cy, W*0.5
-  );
-  g1.addColorStop(0, 'rgba(180,143,212,0.012)');
-  g1.addColorStop(0.5, 'rgba(139,159,212,0.006)');
-  g1.addColorStop(1, 'transparent');
-  bgCtx.fillStyle = g1;
-  bgCtx.fillRect(0,0,W,H);
-}
-
-// ============================================================
-// TOOLTIP
-// ============================================================
-const tooltip = document.getElementById('tooltip');
-function updateTooltip() {
-  if (hoveredNode && hoveredNode.idx !== undefined && activeVerse === null) {
-    const m = memories[hoveredNode.idx];
-    document.getElementById('t-time').textContent = `${m.month} ${m.year}`;
-    document.getElementById('t-url').textContent = m.url;
-    document.getElementById('t-title').textContent = m.title;
-    document.getElementById('t-whisper').textContent = m.whisper;
-
-    let tx = hoveredNode.x + 30, ty = hoveredNode.y - 20;
-    if (tx + 310 > W) tx = hoveredNode.x - 320;
-    if (ty + 200 > H) ty = H - 210;
-    if (ty < 10) ty = 10;
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
-    tooltip.classList.add('visible');
-  } else {
-    tooltip.classList.remove('visible');
-  }
-}
-
-// ============================================================
-// PORTAL TRANSITION
-// ============================================================
-function portalTransition(node, callback) {
-  const overlay = document.getElementById('portal-overlay');
-  overlay.classList.add('active');
-  const [cr,cg,cb] = node.col;
-  let progress = 0;
-  const ox = node.x, oy = node.y;
-
-  function animatePortal() {
-    progress += 0.018;
-    portalCtx.clearRect(0,0,W,H);
-
-    // Expanding rings
-    const maxR = Math.sqrt(W*W+H*H);
-    for (let i=0; i<5; i++) {
-      const p = Math.max(0, progress - i*0.06);
-      if (p <= 0) continue;
-      const ease = 1 - Math.pow(1 - Math.min(p*1.2, 1), 3);
-      const r = ease * maxR;
-      const alpha = (1 - ease) * 0.15;
-      portalCtx.strokeStyle = `rgba(${cr},${cg},${cb},${alpha})`;
-      portalCtx.lineWidth = 2 - i*0.3;
-      portalCtx.beginPath();
-      portalCtx.arc(ox, oy, r, 0, Math.PI*2);
-      portalCtx.stroke();
-    }
-
-    // Central flash
-    const flashP = Math.min(progress * 2, 1);
-    const flashR = flashP * maxR * 1.2;
-    const flashGrad = portalCtx.createRadialGradient(ox, oy, 0, ox, oy, flashR);
-    flashGrad.addColorStop(0, `rgba(${cr},${cg},${cb},${(1-flashP)*0.2})`);
-    flashGrad.addColorStop(0.3, `rgba(5,4,7,${flashP*0.95})`);
-    flashGrad.addColorStop(1, `rgba(5,4,7,${flashP})`);
-    portalCtx.fillStyle = flashGrad;
-    portalCtx.fillRect(0,0,W,H);
-
-    if (progress < 1) {
-      requestAnimationFrame(animatePortal);
-    } else {
-      setTimeout(() => {
-        callback();
-        // Fade out portal
-        let fadeOut = 1;
-        function fadePortal() {
-          fadeOut -= 0.03;
-          portalCtx.clearRect(0,0,W,H);
-          portalCtx.fillStyle = `rgba(5,4,7,${fadeOut})`;
-          portalCtx.fillRect(0,0,W,H);
-          if (fadeOut > 0) requestAnimationFrame(fadePortal);
-          else overlay.classList.remove('active');
-        }
-        fadePortal();
-      }, 200);
-    }
-  }
-  animatePortal();
-}
-
-// ============================================================
-// VERSE VIEW
-// ============================================================
-function enterVerse(idx) {
-  activeVerse = idx;
-  const node = memNodes[idx];
-  portalTransition(node, () => showVerseContent(idx));
-}
-
-function showVerseContent(idx) {
-  const m = memories[idx];
-  const a = m.alt;
-  document.getElementById('map-view').classList.add('hidden');
-  document.body.classList.remove('on-map');
-
-  const container = document.getElementById('verse-container');
-  container.innerHTML = `
-    <div class="verse-origin reveal">${a.label}</div>
-    <div class="verse-source-url reveal">${m.url}</div>
-    <h2 class="verse-title reveal">${a.title}</h2>
-    <div class="verse-subtitle reveal">${a.subtitle}</div>
-
-    <div class="verse-video-area reveal">
-      <div class="video-bg"></div>
-      <div class="video-center">
-        <div class="generate-btn" id="gen-btn" onclick="generateVerse(${idx})">
-          <svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg>
-        </div>
-        <div class="generate-label" id="gen-label">Generate this verse</div>
-      </div>
-      <div class="video-scanlines"></div>
-    </div>
-
-    <div class="verse-generated" id="verse-generated">
-      <div class="gen-label">Verse generated — an alternate life</div>
-      <div class="gen-narrative" id="gen-narrative"></div>
-    </div>
-
-    <div class="verse-actions reveal">
-      <button class="v-action pull" onclick="pullTimeline(${idx})">
-        <span>Pull into this timeline</span>
-        <span class="v-arrow">→</span>
-      </button>
-      <button class="v-action remix">
-        <span>Remix this verse</span>
-        <span class="v-arrow">↻</span>
-      </button>
-      <button class="v-action letgo">
-        <span>Let go</span>
-        <span class="v-arrow">·</span>
-      </button>
-    </div>
-
-    <div class="verse-convergence reveal">
-      <div class="conv-label">Convergence Pattern</div>
-      <div class="conv-text">${a.convergence}</div>
-    </div>
-  `;
-
-  document.getElementById('verse-view').classList.add('active');
-  document.getElementById('verse-back').classList.add('visible');
-}
-
-function exitVerse() {
-  document.getElementById('verse-view').classList.remove('active');
-  document.getElementById('verse-back').classList.remove('visible');
-  document.getElementById('map-view').classList.remove('hidden');
-  document.body.classList.add('on-map');
-  activeVerse = null;
-}
-
-// ============================================================
-// CLAUDE API — Generate the alternate life
-// ============================================================
-async function generateVerse(idx) {
-  const btn = document.getElementById('gen-btn');
-  const label = document.getElementById('gen-label');
-  const genArea = document.getElementById('verse-generated');
-  const narDiv = document.getElementById('gen-narrative');
-  const m = memories[idx];
-
-  btn.classList.add('loading');
-  label.textContent = 'Entering alternate timeline...';
-
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages: [
-          {
-            role: "user",
-            content: m.alt.prompt + "\n\nIMPORTANT: Return ONLY the narrative text. No titles, no labels, no markdown. Just the raw poetic prose. Write exactly 6-8 sentences."
-          }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    const text = data.content.map(c => c.text || '').join('');
-
-    // Split into sentences and animate them in
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    narDiv.innerHTML = sentences.map((s, i) =>
-      `<span class="sentence" style="animation-delay:${i*0.35}s">${s.trim()} </span>`
-    ).join('');
-
-    btn.classList.remove('loading');
-    label.textContent = 'Verse complete';
-    genArea.classList.add('visible');
-
-    // Trigger sentence animations
-    setTimeout(() => {
-      narDiv.querySelectorAll('.sentence').forEach((el, i) => {
-        setTimeout(() => el.classList.add('visible'), i * 350);
-      });
-    }, 100);
-
-  } catch (err) {
-    btn.classList.remove('loading');
-    label.textContent = 'Could not reach this timeline';
-    console.error(err);
-  }
-}
-
-// ============================================================
-// PULL INTO TIMELINE — action plan generation
-// ============================================================
-async function pullTimeline(idx) {
-  const m = memories[idx];
-  const genArea = document.getElementById('verse-generated');
-  const narDiv = document.getElementById('gen-narrative');
-
-  genArea.classList.add('visible');
-  narDiv.innerHTML = '<span class="sentence visible" style="color:var(--violet);">Mapping path into this timeline...</span>';
-
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages: [
-          {
-            role: "user",
-            content: `Someone explored an alternate life based on this browser history artifact: "${m.title}" (${m.whisper}). The alternate life was titled "${m.alt.title}" — ${m.alt.subtitle}.
-
-Now they want to PULL aspects of this alternate life into their real life. Write 5 concrete, specific, poetic-but-actionable steps they could take THIS WEEK to move toward this version of themselves. Each step should be one sentence. Be specific — not "reflect on your goals" but "open a new Google Doc at 11pm and write the first paragraph of the thing you've been avoiding." The tone should be warm, direct, and slightly urgent — like advice from a version of yourself who already made it.
-
-Return ONLY the 5 steps, numbered 1-5. No preamble.`
-          }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    const text = data.content.map(c => c.text || '').join('');
-    const steps = text.split(/\d+[\.\)]\s*/).filter(Boolean);
-
-    narDiv.innerHTML = `<div class="gen-label" style="color:var(--warm);margin-bottom:16px;">PULL INTO THIS TIMELINE — THIS WEEK</div>` +
-      steps.map((s, i) =>
-        `<span class="sentence" style="animation-delay:${i*0.4}s; display:block; margin-bottom:12px; padding-left:16px; border-left:1px solid var(--silver-600);">${s.trim()}</span>`
-      ).join('');
-
-    setTimeout(() => {
-      narDiv.querySelectorAll('.sentence').forEach((el, i) => {
-        setTimeout(() => el.classList.add('visible'), i * 400);
-      });
-    }, 100);
-
-  } catch(err) {
-    narDiv.innerHTML = '<span class="sentence visible" style="color:var(--rose);">This path is temporarily unreachable.</span>';
-  }
-}
-
-// ============================================================
-// CLICK HANDLING
-// ============================================================
-threadCanvas.style.position = 'fixed';
-threadCanvas.style.zIndex = 2;
-threadCanvas.style.pointerEvents = 'none';
-partCanvas.style.pointerEvents = 'none';
-
-// We use a transparent overlay for clicks
-document.addEventListener('click', (e) => {
-  if (activeVerse !== null) return;
-  if (hoveredNode && hoveredNode.idx !== undefined) {
-    enterVerse(hoveredNode.idx);
-  }
+// Multi-layered core glow
+[{s:1.2,o:.08,c:.95},{s:2.0,o:.04,c:.85},{s:3.5,o:.02,c:.8},{s:6,o:.01,c:.75}].forEach(g=>{
+  const geo=new THREE.SphereGeometry(g.s,32,32);
+  const mat=new THREE.MeshBasicMaterial({color:new THREE.Color(g.c,g.c,1),transparent:true,opacity:g.o,side:THREE.BackSide,depthWrite:false});
+  coreGroup.add(new THREE.Mesh(geo,mat));
 });
 
-document.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX; mouseY = e.clientY;
+// Core point light
+const coreLight=new THREE.PointLight(0xeeeeff,3,60);scene.add(coreLight);
+scene.add(new THREE.AmbientLight(0x332244,.25));
+
+// ============ PLANET NODES ============
+const raycaster=new THREE.Raycaster();raycaster.params.Points={threshold:.5};
+const ptr=new THREE.Vector2(-10,-10);
+let hoverIdx=-1,activeV=null;
+
+function mkGlowTex(col,intensity){
+  const cv=document.createElement('canvas');cv.width=256;cv.height=256;const x=cv.getContext('2d');
+  const [r,g,b]=col;
+  const gd=x.createRadialGradient(128,128,0,128,128,128);
+  gd.addColorStop(0,`rgba(${Math.min(255,r*intensity)},${Math.min(255,g*intensity)},${Math.min(255,b*intensity)},0.9)`);
+  gd.addColorStop(.15,`rgba(${r},${g},${b},0.4)`);
+  gd.addColorStop(.4,`rgba(${r},${g},${b},0.1)`);
+  gd.addColorStop(.7,`rgba(${r},${g},${b},0.02)`);
+  gd.addColorStop(1,'transparent');
+  x.fillStyle=gd;x.fillRect(0,0,256,256);
+  return new THREE.CanvasTexture(cv);
+}
+
+const planets=[];
+D.forEach((d,i)=>{
+  const [r,g,b]=d.c.map(v=>v/255);
+  const grp=new THREE.Group();
+
+  // Larger base size for outer planets
+  const baseSize = 0.18 + d.zone * 0.04;
+
+  // Planet sphere — brighter, more emissive
+  const geo=new THREE.SphereGeometry(baseSize,32,32);
+  const mat=new THREE.MeshStandardMaterial({
+    color:new THREE.Color(r,g,b),
+    emissive:new THREE.Color(r,g,b),
+    emissiveIntensity:1.2+d.zone*0.3,
+    roughness:.3,metalness:.1
+  });
+  const mesh=new THREE.Mesh(geo,mat);
+  grp.add(mesh);
+
+  // Glow sprite — vivid
+  const spMat=new THREE.SpriteMaterial({
+    map:mkGlowTex(d.c,1.6),transparent:true,opacity:.7,
+    blending:THREE.AdditiveBlending,depthWrite:false
+  });
+  const sp=new THREE.Sprite(spMat);
+  const baseGlow = 2.5 + d.zone * 0.8;
+  sp.scale.set(baseGlow,baseGlow,1);
+  grp.add(sp);
+
+  // Halo ring
+  const hGeo=new THREE.RingGeometry(baseSize*1.6,baseSize*1.8,64);
+  const hMat=new THREE.MeshBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.15,side:THREE.DoubleSide,depthWrite:false});
+  const halo=new THREE.Mesh(hGeo,hMat);halo.rotation.x=Math.PI*.5;grp.add(halo);
+
+  // Position by angle
+  const angle=(i/D.length)*Math.PI*2+i*.3;
+  const ecc=.5+Math.random()*.4;
+  d._angle=angle;d._ecc=ecc;d._speed=.03+Math.random()*.025;
+  d._tiltX=(Math.random()-.5)*.5;d._tiltZ=(Math.random()-.5)*.4;
+  d._grp=grp;d._mesh=mesh;d._sp=sp;d._halo=halo;
+  d._baseSize=baseSize;d._baseGlow=baseGlow;
+  d._hoverAmt=0; // for volumetric expansion
+
+  scene.add(grp);
+  planets.push(mesh);
+
+  // Orbit ring
+  const pts=[];for(let j=0;j<=128;j++){const a=j/128*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*d.dist,0,Math.sin(a)*d.dist*ecc))}
+  const curve=new THREE.CatmullRomCurve3(pts,true);
+  const rGeo=new THREE.BufferGeometry().setFromPoints(curve.getPoints(256));
+  const rMat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.03+d.zone*.005});
+  const ring=new THREE.Line(rGeo,rMat);ring.rotation.x=d._tiltX;ring.rotation.z=d._tiltZ;
+  scene.add(ring);
 });
 
-// ============================================================
-// MAIN LOOP
-// ============================================================
-function loop() {
-  time += 0.016;
-  hoveredNode = null;
+document.getElementById('sv').textContent=D.length;
 
-  // Background
-  drawBgField();
+// ============ THREADS — curved ============
+const threads=[];
+D.forEach((d,i)=>{
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(60*3);geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const [r,g,b]=d.c.map(v=>v/255);
+  const mat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.08+d.zone*.01});
+  const line=new THREE.Line(geo,mat);scene.add(line);
+  threads.push({line,geo,toIdx:i,offset:Math.random()*10,baseOp:.08+d.zone*.01});
 
-  // Threads + Nodes
-  threadCtx.clearRect(0,0,W,H);
-  if (buildGraph._phantom) buildGraph._phantom.update();
-  bgNodes.forEach(n => { n.update(time); n.draw(); });
-  allThreads.forEach(t => t.draw(time));
-  memNodes.forEach(n => { n.update(time); n.draw(time); });
+  if(i<D.length-1){
+    const geo2=new THREE.BufferGeometry();
+    const pos2=new Float32Array(30*3);geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
+    const mat2=new THREE.LineBasicMaterial({color:0xa89eb8,transparent:true,opacity:.02});
+    const line2=new THREE.Line(geo2,mat2);scene.add(line2);
+    threads.push({line:line2,geo:geo2,fromIdx:i,toIdx:i+1,offset:Math.random()*10,baseOp:.02});
+  }
+});
+document.getElementById('st').textContent=threads.length;
 
-  // Dust
-  partCtx.clearRect(0,0,W,H);
-  dustParticles.forEach(d => { d.update(); d.draw(); });
+function updateThreads(t){
+  threads.forEach(th=>{
+    const segs=th.geo.attributes.position.array.length/3;
+    const from=th.fromIdx!==undefined?D[th.fromIdx]._grp.position.clone():new THREE.Vector3(0,0,0);
+    const to=D[th.toIdx]._grp.position.clone();
+    const mid=from.clone().add(to).multiplyScalar(.5);
+    const perp=new THREE.Vector3().crossVectors(to.clone().sub(from).normalize(),new THREE.Vector3(0,1,0)).multiplyScalar(1.2*Math.sin(t*.25+th.offset));
+    mid.add(perp);mid.y+=Math.cos(t*.2+th.offset)*.6;
+    const curve=new THREE.QuadraticBezierCurve3(from,mid,to);
+    const pts=curve.getPoints(segs-1);
+    const arr=th.geo.attributes.position.array;
+    pts.forEach((p,i)=>{arr[i*3]=p.x;arr[i*3+1]=p.y;arr[i*3+2]=p.z});
+    th.geo.attributes.position.needsUpdate=true;
+  });
+}
 
-  updateTooltip();
+// ============ STARS ============
+const sGeo=new THREE.BufferGeometry();const SC=3000,sP=new Float32Array(SC*3);
+for(let i=0;i<SC;i++){const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=80+Math.random()*400;sP[i*3]=r*Math.sin(ph)*Math.cos(th);sP[i*3+1]=r*Math.sin(ph)*Math.sin(th);sP[i*3+2]=r*Math.cos(ph)}
+sGeo.setAttribute('position',new THREE.BufferAttribute(sP,3));
+scene.add(new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xd4cee0,size:.1,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true})));
+
+// Nebula
+const nebulae=[];
+[{n:1500,rMin:2,rMax:22,y:4,c:0xb48fd4,s:.03,o:.12},{n:1000,rMin:5,rMax:30,y:3,c:0x8b9fd4,s:.025,o:.08},{n:600,rMin:20,rMax:50,y:6,c:0xff8866,s:.02,o:.04}].forEach(cfg=>{
+  const g=new THREE.BufferGeometry();const p=new Float32Array(cfg.n*3);
+  for(let i=0;i<cfg.n;i++){const a=Math.random()*Math.PI*2,r=cfg.rMin+Math.random()*cfg.rMax;p[i*3]=Math.cos(a)*r;p[i*3+1]=(Math.random()-.5)*cfg.y;p[i*3+2]=Math.sin(a)*r}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({color:cfg.c,size:cfg.s,transparent:true,opacity:cfg.o,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
+  pts._rotSpeed=(Math.random()-.5)*.0006;
+  scene.add(pts);
+  nebulae.push(pts);
+});
+
+// ============ TOOLTIP ============
+const tip=document.getElementById('tip');
+function updateTip(){
+  if(hoverIdx>=0&&activeV===null){
+    const d=D[hoverIdx];
+    document.getElementById('tt').textContent=d.mo+' '+d.y;
+    document.getElementById('tu').textContent=d.url;
+    document.getElementById('ttl').textContent=d.t;
+    document.getElementById('tw').textContent=d.w;
+    document.getElementById('td').textContent=ZONES[d.zone]+' · distance '+d.dist.toFixed(1);
+    const pos=D[hoverIdx]._grp.position.clone().project(cam);
+    let sx=(pos.x*.5+.5)*innerWidth,sy=(-pos.y*.5+.5)*innerHeight;
+    let tx=sx+30,ty=sy-28;
+    if(tx+330>innerWidth)tx=sx-340;if(ty<10)ty=10;if(ty+220>innerHeight)ty=innerHeight-230;
+    tip.style.left=tx+'px';tip.style.top=ty+'px';
+    tip.classList.add('vis');document.body.style.cursor='pointer';
+  }else{tip.classList.remove('vis');if(activeV===null&&!dragging)document.body.style.cursor='crosshair'}
+}
+
+// ============ MAIN LOOP ============
+let time=0;
+function loop(){
+  time+=.008;
+
+  // Orbit planets
+  D.forEach((d,i)=>{
+    d._angle+=d._speed*.006;
+    const a=d._angle,r=d.dist,ecc=d._ecc;
+    let x=Math.cos(a)*r,z=Math.sin(a)*r*ecc,y=0;
+    const cx=Math.cos(d._tiltX),sx=Math.sin(d._tiltX),cz=Math.cos(d._tiltZ),sz=Math.sin(d._tiltZ);
+    const y1=y*cx-z*sx,z1=y*sx+z*cx,x1=x*cz-y1*sz,y2=x*sz+y1*cz;
+    d._grp.position.set(x1,y2+Math.sin(time*1.2+i)*.05,z1);
+
+    // ---- VOLUMETRIC HOVER EXPANSION ----
+    const targetHover=(hoverIdx===i)?1:0;
+    d._hoverAmt+=(targetHover-d._hoverAmt)*.07;
+    const h=d._hoverAmt;
+    const expand=1+h*1.8; // up to 2.8x scale
+    d._mesh.scale.setScalar(expand);
+    d._mesh.material.emissiveIntensity=(1.2+d.zone*.3)+h*2.0;
+
+    // Glow expands volumetrically
+    const glowScale=d._baseGlow*(1+h*2.5);
+    d._sp.scale.set(glowScale,glowScale,1);
+    d._sp.material.opacity=.6+h*.5;
+
+    // Halo expands
+    const haloScale=1+h*2;
+    d._halo.scale.set(haloScale,haloScale,haloScale);
+    d._halo.material.opacity=.15+h*.4;
+    d._halo.rotation.x=Math.PI*.5+Math.sin(time+i)*.15;
+  });
+
+  // Core breathing
+  const p=.9+.1*Math.sin(time*1.5);
+  coreMesh.scale.setScalar(p);
+  coreLight.intensity=2.5+Math.sin(time*1.2);
+
+  // Nebulae rotate
+  scene.children.forEach(c=>{if(c.isPoints&&c._rotSpeed)c.rotation.y+=c._rotSpeed});
+
+  updateThreads(time);
+  updateCam();
+
+  // Raycast
+  raycaster.setFromCamera(ptr,cam);
+  const hits=raycaster.intersectObjects(planets);
+  hoverIdx=-1;
+
+  // Brighten threads on hover
+  threads.forEach(th=>{th.line.material.opacity=th.baseOp});
+
+  if(hits.length>0&&activeV===null){
+    const h=hits[0].object;
+    const idx=D.findIndex(d=>d._mesh===h);
+    if(idx>=0){
+      hoverIdx=idx;
+      threads.forEach(th=>{
+        if(th.toIdx===idx||(th.fromIdx===idx)){th.line.material.opacity=.4}
+      });
+    }
+  }
+
+  updateTip();
+  R.render(scene,cam);
   requestAnimationFrame(loop);
 }
 loop();
+
+// ============ CLICK → VERSE ============
+canvas.addEventListener('click',()=>{if(hoverIdx>=0&&activeV===null)enterV(hoverIdx)});
+
+function enterV(idx){
+  activeV=idx;tip.classList.remove('vis');
+  const ov=document.getElementById('po'),pc=document.getElementById('pc');
+  pc.width=innerWidth;pc.height=innerHeight;const px=pc.getContext('2d');ov.classList.add('on');
+  const [cr,cg,cb]=D[idx].c;
+  const sp=D[idx]._grp.position.clone().project(cam);
+  const ox=(sp.x*.5+.5)*innerWidth,oy=(-sp.y*.5+.5)*innerHeight;
+  let prog=0;const mR=Math.sqrt(innerWidth**2+innerHeight**2);
+  function anim(){
+    prog+=.022;px.clearRect(0,0,pc.width,pc.height);
+    for(let i=0;i<7;i++){const p=Math.max(0,prog-i*.035);if(p<=0)continue;const e=1-Math.pow(1-Math.min(p*1.3,1),3),r=e*mR;
+      px.strokeStyle=`rgba(${cr},${cg},${cb},${(1-e)*.1})`;px.lineWidth=1.5;px.beginPath();px.arc(ox,oy,r,0,Math.PI*2);px.stroke()}
+    const fp=Math.min(prog*2,1),fg=px.createRadialGradient(ox,oy,0,ox,oy,fp*mR*1.2);
+    fg.addColorStop(0,`rgba(${cr},${cg},${cb},${(1-fp)*.12})`);fg.addColorStop(.3,`rgba(3,2,6,${fp*.96})`);fg.addColorStop(1,`rgba(3,2,6,${fp})`);
+    px.fillStyle=fg;px.fillRect(0,0,pc.width,pc.height);
+    if(prog<1)requestAnimationFrame(anim);
+    else setTimeout(()=>{showV(idx);let fo=1;function fd(){fo-=.04;px.clearRect(0,0,pc.width,pc.height);px.fillStyle=`rgba(3,2,6,${Math.max(fo,0)})`;px.fillRect(0,0,pc.width,pc.height);if(fo>0)requestAnimationFrame(fd);else ov.classList.remove('on')}fd()},120);
+  }
+  anim();
+}
+
+function showV(idx){
+  const d=D[idx],a=d.a;
+  document.querySelectorAll('.mc').forEach(e=>e.classList.add('h'));document.body.style.cursor='default';
+  document.getElementById('vvc').innerHTML=`
+    <div class="vo rv" style="animation-delay:0s">${a.l}</div>
+    <div class="vurl rv" style="animation-delay:.1s">${d.url}</div>
+    <h2 class="vtit rv" style="animation-delay:.2s">${a.t}</h2>
+    <div class="vsub rv" style="animation-delay:.35s">${a.s}</div>
+    <div class="va-w rv" style="animation-delay:.45s"><div class="vbg"></div><div class="vctr">
+      <div class="gb" id="gb" onclick="genV(${idx})"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg></div>
+      <div class="gl" id="gl">Generate this verse</div></div><div class="scn"></div></div>
+    <div class="ga" id="ga"><div class="ga-l">Verse generated — an alternate life</div><div class="ga-n" id="gn"></div></div>
+    <div class="acts rv" style="animation-delay:.55s">
+      <button class="ab" onclick="pullTL(${idx})"><span>Pull into this timeline</span><span class="ar">→</span></button>
+      <button class="ab rx"><span>Remix this verse</span><span class="ar">↻</span></button>
+      <button class="ab lg"><span>Let go</span><span class="ar">·</span></button></div>
+    <div class="cv rv" style="animation-delay:.65s"><div class="cv-l">Convergence · ${ZONES[d.zone]}</div><div class="cv-t">${a.cv}</div></div>`;
+  document.getElementById('vv').classList.add('on');document.getElementById('vb').classList.add('vis');
+}
+
+function exitV(){document.getElementById('vv').classList.remove('on');document.getElementById('vb').classList.remove('vis');document.querySelectorAll('.mc').forEach(e=>e.classList.remove('h'));document.body.style.cursor='crosshair';activeV=null}
+
+async function genV(idx){
+  const btn=document.getElementById('gb'),lbl=document.getElementById('gl'),area=document.getElementById('ga'),nar=document.getElementById('gn');
+  btn.classList.add('ld');lbl.textContent='Entering alternate timeline...';
+  try{const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:D[idx].a.p}]})});
+    const data=await res.json();const text=data.content.map(c=>c.text||'').join('');
+    const sents=text.match(/[^.!?]+[.!?]+/g)||[text];
+    nar.innerHTML=sents.map((s,i)=>`<span class="sn" style="animation-delay:${i*.35}s">${s.trim()} </span>`).join('');
+    btn.classList.remove('ld');lbl.textContent='Verse complete';area.classList.add('vis');
+    setTimeout(()=>{nar.querySelectorAll('.sn').forEach((el,i)=>{setTimeout(()=>el.classList.add('vis'),i*350)})},100);
+  }catch(e){btn.classList.remove('ld');lbl.textContent='Could not reach this timeline'}
+}
+
+async function pullTL(idx){
+  const area=document.getElementById('ga'),nar=document.getElementById('gn');area.classList.add('vis');
+  nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Mapping path into this timeline...</span>';const d=D[idx];
+  try{const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:`Someone explored an alternate life based on: "${d.t}" (${d.w}). Verse: "${d.a.t}" — ${d.a.s}. This life is in the "${ZONES[d.zone]}" zone — ${d.zone>=3?'radically different from their current life':'a plausible nearby life'}. Write 5 concrete, specific, poetic-but-actionable steps for THIS WEEK. Be specific. Warm, direct, urgent — advice from a future self. Return ONLY 5 numbered steps.`}]})});
+    const data=await res.json();const text=data.content.map(c=>c.text||'').join('');
+    const steps=text.split(/\d+[\.\)]\s*/).filter(Boolean);
+    nar.innerHTML=`<div class="ga-l" style="color:var(--warm);margin-bottom:16px">PULL INTO THIS TIMELINE — THIS WEEK</div>`+steps.map((s,i)=>`<span class="sn" style="animation-delay:${i*.4}s;display:block;margin-bottom:14px;padding-left:16px;border-left:1px solid var(--s600)">${s.trim()}</span>`).join('');
+    setTimeout(()=>{nar.querySelectorAll('.sn').forEach((el,i)=>{setTimeout(()=>el.classList.add('vis'),i*400)})},100);
+  }catch(e){nar.innerHTML='<span class="sn vis" style="color:var(--rose)">This path is temporarily unreachable.</span>'}
+}
 </script>
 </body>
 </html>
