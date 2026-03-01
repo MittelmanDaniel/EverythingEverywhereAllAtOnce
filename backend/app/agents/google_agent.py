@@ -1,12 +1,12 @@
 import logging
 
-from app.agents.base import create_session_with_cookies, get_client
+from app.agents.base import get_client
 from app.agents.schemas.google import GoogleData
 
 logger = logging.getLogger(__name__)
 
 GOOGLE_TASK = """
-You are logged into Google via cookies. Visit the following Google services and collect data.
+You are logged into Google via the current browser session. Visit the following Google services and collect data.
 
 1. Go to https://drive.google.com
    - Collect the first 50 most recent files visible in "My Drive" or "Recent".
@@ -29,11 +29,8 @@ Return all data in the structured format requested.
 """
 
 
-async def run_google_agent(cookies: list[dict]) -> dict:
-    # Create profile with cookies, then an agent session backed by it
-    session_id = await create_session_with_cookies(cookies)
-
-    # v2 agent runs the task in that browser
+async def run_google_agent(session_id: str) -> dict:
+    """Run the Google data collection agent in an existing authenticated session."""
     client = get_client()
     try:
         result = client.run(

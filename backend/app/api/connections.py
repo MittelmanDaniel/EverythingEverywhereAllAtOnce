@@ -1,7 +1,9 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.base import create_session
 from app.api.deps import get_current_user
 from app.database import get_db
 from app.models.connection import ServiceConnection
@@ -32,9 +34,23 @@ async def list_connections(
     )
 
 
+@router.post("/session/start")
+async def start_session(
+    user: User = Depends(get_current_user),
+):
+    """Create a Browser Use session and return the live URL for user login."""
+    session_id, live_url = await create_session()
+    return {"session_id": session_id, "live_url": live_url}
+
+
+class CollectRequest(BaseModel):
+    session_id: str
+
+
 @router.post("/{service}/collect")
 async def trigger_collection(
     service: str,
+    body: CollectRequest,
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -52,10 +68,9 @@ async def trigger_collection(
     conn.status = "collecting"
     await db.commit()
 
-    # Import here to avoid circular imports
     from app.services.collection_service import run_collection
 
-    background_tasks.add_task(run_collection, user.id, service)
+    background_tasks.add_task(run_collection, user.id, service, body.session_id)
     return {"status": "collecting", "service": service}
 
 

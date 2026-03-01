@@ -30,10 +30,14 @@
     <div class="step locked" id="step2">
       <div class="step-num">Step 02 <span class="check">&#10003;</span></div>
       <div class="step-title">Collect Your Data</div>
-      <div class="step-desc">We'll scan your connected services to find the threads of your alternate lives.</div>
+      <div class="step-desc">We'll open a cloud browser for you to log into Google, then scan your data.</div>
       <div class="step-status" id="s2-status"></div>
       <div class="services" id="s2-services"></div>
+      <div id="s2-live-container" style="display:none">
+        <iframe id="s2-live-iframe" style="width:100%;height:500px;border:1px solid rgba(255,255,255,0.15);border-radius:8px;margin:12px 0;background:#000"></iframe>
+      </div>
       <button class="btn btn-primary" id="s2-btn" onclick="collectGoogle()">Scan my Google</button>
+      <button class="btn btn-warm" id="s2-confirm-btn" onclick="confirmLoggedIn()" style="display:none">I'm logged in — start scanning</button>
     </div>
 
     <!-- Step 3: Enter Your Multiverse -->

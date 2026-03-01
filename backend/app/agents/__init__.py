@@ -5,8 +5,8 @@ AGENTS = {
 }
 
 
-async def run_agent(service: str, cookies: list[dict]) -> dict:
+async def run_agent(service: str, session_id: str) -> dict:
     agent_fn = AGENTS.get(service)
     if not agent_fn:
         raise ValueError(f"No agent for service: {service}")
-    return await agent_fn(cookies)
+    return await agent_fn(session_id)

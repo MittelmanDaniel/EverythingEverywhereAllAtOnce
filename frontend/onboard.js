@@ -93,30 +93,71 @@ function showServices(services) {
   if (collected.length > 0) {
     document.getElementById('s2-status').textContent = 'Data already collected';
     document.getElementById('s2-status').className = 'step-status ok';
-    document.getElementById('s2-btn').style.display = 'none';
+    document.getElementById('s2-btn').textContent = 'Re-scan my Google';
+    document.getElementById('s2-btn').disabled = false;
     activateStep(3);
     startStep3();
   }
 }
 
+let activeSessionId = null;
+
 async function collectGoogle() {
   const btn = document.getElementById('s2-btn');
   const status = document.getElementById('s2-status');
   btn.disabled = true;
-  btn.textContent = 'Scanning...';
+  btn.textContent = 'Starting browser...';
+  status.innerHTML = '<span class="spinner"></span>Creating cloud browser...';
+  status.className = 'step-status working';
+
+  try {
+    // 1. Create a Browser Use session with a live URL
+    const res = await fetch(`${API}/api/connections/session/start`, {
+      method: 'POST', headers
+    });
+    if (!res.ok) throw new Error('Failed to create session');
+    const { session_id, live_url } = await res.json();
+    activeSessionId = session_id;
+
+    // 2. Show the live browser to the user
+    if (live_url) {
+      document.getElementById('s2-live-iframe').src = live_url;
+      document.getElementById('s2-live-container').style.display = 'block';
+    }
+
+    status.textContent = 'Log into your Google account in the browser above';
+    status.className = 'step-status working';
+    btn.style.display = 'none';
+    document.getElementById('s2-confirm-btn').style.display = 'inline-block';
+  } catch (e) {
+    status.textContent = 'Failed to start browser — try again';
+    status.className = 'step-status';
+    btn.disabled = false;
+    btn.textContent = 'Scan my Google';
+  }
+}
+
+async function confirmLoggedIn() {
+  const confirmBtn = document.getElementById('s2-confirm-btn');
+  const status = document.getElementById('s2-status');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Scanning...';
   status.innerHTML = '<span class="spinner"></span>Collecting your data...';
   status.className = 'step-status working';
 
   try {
+    // Trigger collection using the session the user logged into
     await fetch(`${API}/api/connections/google/collect`, {
-      method: 'POST', headers
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: activeSessionId })
     });
     pollCollectionStatus();
   } catch {
     status.textContent = 'Failed to start collection — try again';
     status.className = 'step-status';
-    btn.disabled = false;
-    btn.textContent = 'Scan my Google';
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "I'm logged in — start scanning";
   }
 }
 
@@ -128,9 +169,21 @@ async function pollCollectionStatus() {
       document.getElementById('s2-status').textContent = 'Collection complete';
       document.getElementById('s2-status').className = 'step-status ok';
       document.getElementById('s2-btn').style.display = 'none';
+      document.getElementById('s2-confirm-btn').style.display = 'none';
+      document.getElementById('s2-live-container').style.display = 'none';
       showServices(data.services);
       activateStep(3);
       startStep3();
+      return;
+    }
+    if (google && google.status === 'error') {
+      document.getElementById('s2-status').textContent = 'Collection failed — try again';
+      document.getElementById('s2-status').className = 'step-status';
+      document.getElementById('s2-btn').style.display = 'inline-block';
+      document.getElementById('s2-btn').disabled = false;
+      document.getElementById('s2-btn').textContent = 'Scan my Google';
+      document.getElementById('s2-confirm-btn').style.display = 'none';
+      document.getElementById('s2-live-container').style.display = 'none';
       return;
     }
   }

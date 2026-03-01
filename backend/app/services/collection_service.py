@@ -8,16 +8,14 @@ from app.database import async_session
 from app.models.collected_data import CollectedData
 from app.models.connection import ServiceConnection
 from app.services.analysis_service import run_analysis
-from app.utils.encryption import decrypt_cookies
 
 logger = logging.getLogger(__name__)
 
 
-async def run_collection(user_id: str, service: str):
+async def run_collection(user_id: str, service: str, session_id: str):
     """Background task: run Browser Use agent to collect data from a service."""
     async with async_session() as db:
         try:
-            # Get connection + cookies
             result = await db.execute(
                 select(ServiceConnection).where(
                     ServiceConnection.user_id == user_id,
@@ -28,14 +26,10 @@ async def run_collection(user_id: str, service: str):
             if not conn:
                 return
 
-            cookies = decrypt_cookies(conn.cookies_encrypted)
-
-            # Run the appropriate agent
             from app.agents import run_agent
 
-            agent_result = await run_agent(service, cookies)
+            agent_result = await run_agent(service, session_id)
 
-            # Store collected data
             collected = CollectedData(
                 user_id=user_id,
                 service=service,
