@@ -1,11 +1,7 @@
-from app.agents.github_agent import run_github_agent
-from app.agents.goodreads_agent import run_goodreads_agent
-from app.agents.youtube_agent import run_youtube_agent
+from app.agents.google_agent import run_google_agent
 
 AGENTS = {
-    "github": run_github_agent,
-    "youtube": run_youtube_agent,
-    "goodreads": run_goodreads_agent,
+    "google": run_google_agent,
 }
 
 

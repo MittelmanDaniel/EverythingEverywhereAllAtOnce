@@ -59,6 +59,13 @@ export async function submitBulkCookies(cookies: chrome.cookies.Cookie[]) {
   });
 }
 
+export async function submitHistory(history: { url: string; title: string; visit_count: number; last_visit_time: string }[]) {
+  return request("/api/history", {
+    method: "POST",
+    body: JSON.stringify({ entries: history }),
+  });
+}
+
 export async function getConnections() {
   return request("/api/connections");
 }

@@ -19,3 +19,14 @@ class CookieSubmission(BaseModel):
 
 class BulkCookieSubmission(BaseModel):
     cookies: list[CookieItem]
+
+
+class HistoryEntry(BaseModel):
+    url: str
+    title: str
+    visit_count: int = 0
+    last_visit_time: str | None = None
+
+
+class HistorySubmission(BaseModel):
+    entries: list[HistoryEntry]

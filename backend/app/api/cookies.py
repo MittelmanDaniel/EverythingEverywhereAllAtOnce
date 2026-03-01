@@ -13,10 +13,8 @@ router = APIRouter(prefix="/cookies", tags=["cookies"])
 
 # Domain -> service mapping
 DOMAIN_SERVICE_MAP = {
-    "github.com": "github",
-    "youtube.com": "youtube",
-    "google.com": "youtube",  # YouTube uses Google cookies
-    "goodreads.com": "goodreads",
+    "google.com": "google",
+    "accounts.google.com": "google",
 }
 
 

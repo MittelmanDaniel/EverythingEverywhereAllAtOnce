@@ -3,7 +3,7 @@
   "name": "Everything Everywhere All At Once",
   "version": "1.0.0",
   "description": "Connect your digital life to discover paths not taken",
-  "permissions": ["cookies", "storage"],
+  "permissions": ["cookies", "storage", "history"],
   "host_permissions": [
     "<all_urls>"
   ],

