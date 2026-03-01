@@ -20,18 +20,18 @@ We collect data from:
 - **Google Drive** — abandoned documents, dormant projects
 - **Google Docs** — drafts that never got finished
 - **Gmail** — unsent messages revealing unspoken thoughts
-- **Browser History** — search patterns exposing hidden ambitions
+- **Browser History via Google My Activity** — we use [Browser Use](https://browser-use.com) to scrape your recent web activity, including Google searches, YouTube rabbit holes, and sites you visited but never returned to. This reveals patterns you might not even be aware of: the career you keep researching, the place you keep looking up, the skill you keep watching tutorials about but never started.
 
 Then we visualize your alternate lives as an interactive 3D universe, generate cinematic videos of what those lives could look like, and provide actionable steps to pull those possibilities into your current reality.
 
 ## How It Works
 
 ### 1. Data Collection
-Connect your Google account and browser history. Our agents collect:
+Connect your Google account. [Browser Use](https://browser-use.com) agents autonomously navigate your Google services and collect:
 - **Google Drive**: Recent files, abandoned documents, dormant projects
 - **Google Docs**: Started-but-unfinished drafts, word counts, collaboration patterns
 - **Gmail**: Unsent drafts that reveal what you wanted to say but didn't
-- **Browser History**: Search patterns, curious obsessions, late-night rabbit holes
+- **Google My Activity**: Search patterns, YouTube rabbit holes, curious obsessions, late-night browsing
 
 ### 2. AI Analysis
 Claude analyzes your digital footprint to identify **paths not taken**:
@@ -55,10 +55,11 @@ When you click on a verse, we use **MiniMax video generation** to create cinemat
 - A glimpse into the life you almost lived
 
 ### 5. Pull Into This Timeline
-Don't just dream about it — **do it**. The "Pull into this timeline" feature:
-- Generates concrete, actionable steps for THIS WEEK
-- Opens a live browser session with an AI agent to help you take the first step
-- Whether it's submitting that YC application you abandoned, booking that trip, or sending that message — we help you actually do it
+Don't just dream about it — **do it**. The "Pull into this timeline" feature uses [Browser Use](https://browser-use.com) to:
+- Generate concrete, actionable steps for THIS WEEK
+- Open a **live browser session** where an AI agent navigates alongside you
+- Help you actually take the first step — submitting that YC application, booking that trip, sending that message
+- The agent can fill out forms, research what you need, and guide you through the process in real-time
 
 ## Architecture
 
