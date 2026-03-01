@@ -7,6 +7,7 @@ from app.api.cookies import router as cookies_router
 from app.api.explore import router as explore_router
 from app.api.history import router as history_router
 from app.api.verses import router as verses_router
+from app.api.video import router as video_router
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
@@ -16,3 +17,4 @@ api_router.include_router(analysis_router)
 api_router.include_router(history_router)
 api_router.include_router(verses_router)
 api_router.include_router(explore_router)
+api_router.include_router(video_router)
