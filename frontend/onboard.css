@@ -46,3 +46,5 @@ h1 em{font-style:italic;color:var(--warm)}
 
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{display:inline-block;width:12px;height:12px;border:1.5px solid transparent;border-top-color:var(--violet);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+
+.footer-sep{color:var(--s600);margin:0 10px}

@@ -28,4 +28,14 @@ async function loadExplore(){
 }
 loadExplore();
 
+const token = localStorage.getItem('token');
+const authLink = document.getElementById('auth-link');
+if (token) {
+  authLink.textContent = 'Log out';
+  authLink.onclick = () => { localStorage.removeItem('token'); window.location.href = '/'; };
+} else {
+  authLink.href = '/';
+}
+
+
 initParticles('bg', { count: 80, speed: 0.12, maxRadius: 1.2, maxOpacity: 0.2, connectionOpacity: 0.03 });

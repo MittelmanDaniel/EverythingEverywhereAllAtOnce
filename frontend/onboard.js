@@ -3,85 +3,33 @@ const token = localStorage.getItem('token');
 if (!token) window.location.href = '/';
 
 const headers = { 'Authorization': `Bearer ${token}` };
-let currentStep = 1;
-let pollConn = null;
 let pollCollect = null;
 let pollAnalysis = null;
 
 // ============ STEP MANAGEMENT ============
+// Steps are step2 (collect) and step3 (multiverse) in the DOM
 function activateStep(n) {
-  currentStep = n;
-  for (let i = 1; i <= 3; i++) {
-    const el = document.getElementById('step' + i);
+  for (const id of ['step2', 'step3']) {
+    const el = document.getElementById(id);
+    const stepN = id === 'step2' ? 2 : 3;
     el.classList.remove('active', 'locked', 'done');
-    if (i < n) el.classList.add('done');
-    else if (i === n) el.classList.add('active');
+    if (stepN < n) el.classList.add('done');
+    else if (stepN === n) el.classList.add('active');
     else el.classList.add('locked');
   }
 }
 
-// ============ STEP 1: Install & Sync ============
 async function checkConnections() {
   try {
     const res = await fetch(`${API}/api/connections`, { headers });
     if (!res.ok) return null;
     const data = await res.json();
-    // API returns { connections: [...] }, normalize to { services: [...] }
     if (data.connections && !data.services) data.services = data.connections;
     return data;
   } catch { return null; }
 }
 
-async function pollConnections() {
-  const data = await checkConnections();
-  if (data && data.services) {
-    const connected = data.services.filter(s => s.status === 'connected');
-    if (connected.length > 0) {
-      completeStep1Auto(data.services);
-      return;
-    }
-  }
-  pollConn = setTimeout(pollConnections, 3000);
-}
-
-function completeStep1Auto(services) {
-  clearTimeout(pollConn);
-  document.getElementById('s1-status').textContent = 'Cookies synced — services detected';
-  document.getElementById('s1-status').className = 'step-status ok';
-  document.getElementById('s1-btn').style.display = 'none';
-  activateStep(2);
-  showServices(services);
-}
-
-async function completeStep1() {
-  const btn = document.getElementById('s1-btn');
-  const status = document.getElementById('s1-status');
-  btn.disabled = true;
-  btn.textContent = 'Checking...';
-  status.textContent = 'Verifying cookie sync...';
-  status.className = 'step-status working';
-
-  const data = await checkConnections();
-  if (data && data.services && data.services.some(s => s.status === 'connected' || s.status === 'collected')) {
-    clearTimeout(pollConn);
-    status.textContent = 'Cookies synced — services detected';
-    status.className = 'step-status ok';
-    btn.style.display = 'none';
-    activateStep(2);
-    showServices(data.services);
-  } else {
-    status.textContent = 'No cookies found yet — sync from the extension first';
-    status.className = 'step-status';
-    btn.disabled = false;
-    btn.textContent = "I've synced my cookies";
-  }
-}
-
-// ============ STEP 2: Collect Your Data ============
-async function loadStep2() {
-  const data = await checkConnections();
-  if (data && data.services) showServices(data.services);
-}
+// ============ STEP 1 (DOM: step2): Collect Your Data ============
 
 function showServices(services) {
   const container = document.getElementById('s2-services');
@@ -230,17 +178,23 @@ async function init() {
     }
   } catch {}
 
+  // Check if already collected — skip straight to step 3
   const data = await checkConnections();
   if (data && data.services) {
-    const connected = data.services.filter(s => s.status === 'connected' || s.status === 'collected');
-    if (connected.length > 0) {
-      activateStep(2);
+    const collected = data.services.filter(s => s.status === 'collected');
+    if (collected.length > 0) {
       showServices(data.services);
       return;
     }
   }
 
-  pollConnections();
+  // Otherwise land on step 2 (collect)
+  activateStep(2);
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = '/';
 }
 
 init();

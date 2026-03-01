@@ -14,21 +14,12 @@
 <div class="wrap">
   <div class="title">Everything Everywhere All at Once</div>
   <h1>Prepare to <em>cross over</em></h1>
-  <p class="sub">Three steps to map the lives you almost lived.</p>
+  <p class="sub">Two steps to map the lives you almost lived.</p>
 
   <div class="steps">
-    <!-- Step 1: Install & Sync -->
-    <div class="step active" id="step1">
+    <!-- Step 1: Collect Your Data -->
+    <div class="step active" id="step2">
       <div class="step-num">Step 01 <span class="check">&#10003;</span></div>
-      <div class="step-title">Install & Sync</div>
-      <div class="step-desc">Install the browser extension and click "Send All Cookies" to connect your accounts.</div>
-      <div class="step-status" id="s1-status">Waiting for cookie sync...</div>
-      <button class="btn btn-primary" id="s1-btn" onclick="completeStep1()">I've synced my cookies</button>
-    </div>
-
-    <!-- Step 2: Collect Your Data -->
-    <div class="step locked" id="step2">
-      <div class="step-num">Step 02 <span class="check">&#10003;</span></div>
       <div class="step-title">Collect Your Data</div>
       <div class="step-desc">We'll open a cloud browser for you to log into Google, then scan your data.</div>
       <div class="step-status" id="s2-status"></div>
@@ -42,7 +33,7 @@
 
     <!-- Step 3: Enter Your Multiverse -->
     <div class="step locked" id="step3">
-      <div class="step-num">Step 03 <span class="check">&#10003;</span></div>
+      <div class="step-num">Step 02 <span class="check">&#10003;</span></div>
       <div class="step-title">Enter Your Multiverse</div>
       <div class="step-desc">Your alternate lives are being mapped across the multiverse.</div>
       <div class="step-status" id="s3-status"></div>
@@ -53,6 +44,8 @@
 
   <div class="footer">
     <a href="/map">Skip to map &rarr;</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="#" onclick="logout(); return false;">Log out</a>
   </div>
 </div>
 

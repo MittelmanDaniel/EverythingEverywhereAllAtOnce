@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
+    "anthropic>=0.40.0",
     "aiosqlite>=0.22.1",
     "browser-use-sdk>=3.1.0",
     "cryptography>=46.0.5",

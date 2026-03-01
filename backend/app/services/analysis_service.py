@@ -1,19 +1,47 @@
 import json
 import logging
 
+import anthropic
 from sqlalchemy import delete, select
 
+from app.config import settings
 from app.database import async_session
 from app.models.analysis import PathNotTaken
 from app.models.collected_data import CollectedData
 
 logger = logging.getLogger(__name__)
 
+SYSTEM_PROMPT = """You are an analyst for "Everything Everywhere All at Once" — an app that maps the alternate lives a person almost lived based on their digital footprint.
+
+Given a user's Google data (Drive files, Docs, Gmail drafts, labels), identify the most meaningful "paths not taken" — moments where their life could have branched differently.
+
+Look for:
+- Abandoned projects: docs or files that started strong but were never finished
+- Unsent messages: drafts that reveal something they wanted to say but didn't
+- Forgotten interests: files or docs in domains they clearly cared about but drifted away from
+- Dormant periods: gaps or silences in their digital activity
+- Hidden ambitions: titles or content that hint at a life they were considering
+
+For each path, assign:
+- category: one of "abandoned_project", "forgotten_interest", "dormant_period", "unsent_message", "hidden_ambition"
+- title: a short, evocative name for this alternate life branch (e.g. "The Novelist You Almost Became")
+- description: 2-3 sentences in second person ("You...") that make this path feel real and emotionally resonant
+- evidence: the specific data point(s) that reveal this path (file name, draft subject, etc.)
+- confidence: 0.0–1.0 how strongly the data suggests this was a real fork in the road
+- timeline_date: approximate date (YYYY-MM-DD or YYYY) if determinable, else null
+
+Return a JSON object with a single key "paths" containing an array of path objects. Return 5–15 paths. Only include paths with confidence >= 0.4."""
+
+def _build_user_message(data: dict) -> str:
+    return f"""Here is the user's collected Google data:
+
+{json.dumps(data, indent=2)}
+
+Identify the paths not taken. Return only valid JSON."""
+
 
 async def run_analysis(user_id: str):
-    """Analyze collected data and generate 'paths not taken'."""
     async with async_session() as db:
-        # Get all collected data
         result = await db.execute(
             select(CollectedData).where(CollectedData.user_id == user_id)
         )
@@ -22,243 +50,52 @@ async def run_analysis(user_id: str):
         if not all_data:
             return
 
-        # Clear previous analysis
         await db.execute(delete(PathNotTaken).where(PathNotTaken.user_id == user_id))
 
-        paths: list[PathNotTaken] = []
-
+        # Merge all collected data into one dict for Claude
+        merged: dict = {}
         for data in all_data:
             try:
                 parsed = json.loads(data.data_json)
-                if data.service == "google" and data.data_type == "history":
-                    paths.extend(analyze_browser_history(user_id, parsed))
-                elif data.service == "google":
-                    paths.extend(analyze_google(user_id, parsed))
+                merged.update(parsed)
             except Exception as e:
-                logger.error(f"Analysis failed for {data.service}: {e}")
+                logger.error(f"Failed to parse collected data for {data.service}: {e}")
 
-        for p in paths:
-            db.add(p)
-        await db.commit()
-
-
-def analyze_google(user_id: str, data: dict) -> list[PathNotTaken]:
-    paths = []
-
-    # Abandoned docs: created but barely edited or untouched for months
-    for doc in data.get("docs", []):
-        last_edited = doc.get("last_edited")
-        created = doc.get("created_date")
-        word_count = doc.get("word_count")
-
-        # Docs with very little content suggest abandoned ideas
-        if word_count is not None and word_count < 50:
-            paths.append(
-                PathNotTaken(
-                    user_id=user_id,
-                    category="abandoned_project",
-                    title=f"The Empty Doc: '{doc['title']}'",
-                    description=(
-                        f"You created '{doc['title']}' "
-                        f"{'on ' + created if created else 'some time ago'} "
-                        f"but it only has {word_count} words. "
-                        f"What were you about to write? What idea were you chasing?"
-                    ),
-                    evidence_json=json.dumps({"doc": doc}),
-                    source_service="google",
-                    confidence=0.8,
-                    timeline_date=created or last_edited,
-                )
-            )
-
-    # Unsent drafts: Gmail drafts that were never sent
-    for draft in data.get("drafts", []):
-        subject = draft.get("subject") or "(no subject)"
-        paths.append(
-            PathNotTaken(
-                user_id=user_id,
-                category="forgotten_interest",
-                title=f"Unsent: '{subject}'",
-                description=(
-                    f"You composed a draft"
-                    f"{' about \"' + subject + '\"' if draft.get('subject') else ''}"
-                    f"{' on ' + draft['created_date'] if draft.get('created_date') else ''}"
-                    f" but never hit send. "
-                    f"What stopped you? Sometimes the things we almost say matter most."
-                ),
-                evidence_json=json.dumps({"draft": draft}),
-                source_service="google",
-                confidence=0.7,
-                timeline_date=draft.get("created_date"),
-            )
-        )
-
-    # Forgotten files: Drive files not opened in a long time
-    for f in data.get("drive_files", []):
-        last_opened = f.get("last_opened_by_me")
-        created = f.get("created_date")
-
-        # Files that were created but seemingly never revisited
-        if created and not last_opened:
-            paths.append(
-                PathNotTaken(
-                    user_id=user_id,
-                    category="forgotten_interest",
-                    title=f"Forgotten: '{f['name']}'",
-                    description=(
-                        f"You created '{f['name']}'"
-                        + (f" ({f['type']})" if f.get("type") else "")
-                        + f" on {created} but never opened it again. "
-                        f"What was this for? A project that never took off?"
-                    ),
-                    evidence_json=json.dumps({"file": f}),
-                    source_service="google",
-                    confidence=0.6,
-                    timeline_date=created,
-                )
-            )
-
-    # Quiet periods: look for gaps in file creation activity
-    all_dates = []
-    for f in data.get("drive_files", []):
-        if f.get("created_date"):
-            try:
-                year = int(f["created_date"][:4])
-                all_dates.append(year)
-            except (ValueError, IndexError):
-                pass
-    for doc in data.get("docs", []):
-        if doc.get("created_date"):
-            try:
-                year = int(doc["created_date"][:4])
-                all_dates.append(year)
-            except (ValueError, IndexError):
-                pass
-
-    if len(set(all_dates)) >= 2:
-        years = sorted(set(all_dates))
-        all_years = range(min(years), max(years) + 1)
-        gaps = [y for y in all_years if y not in years]
-        if gaps:
-            paths.append(
-                PathNotTaken(
-                    user_id=user_id,
-                    category="dormant_period",
-                    title=f"The Quiet Year{'s' if len(gaps) > 1 else ''}: {', '.join(map(str, gaps))}",
-                    description=(
-                        f"Your Google Drive went silent in {', '.join(map(str, gaps))}. "
-                        f"No new files or docs created. What were you doing instead? "
-                        f"Sometimes the paths we take offline matter more."
-                    ),
-                    evidence_json=json.dumps({"gap_years": gaps}),
-                    source_service="google",
-                    confidence=0.5,
-                    timeline_date=str(gaps[0]),
-                )
-            )
-
-    return paths
-
-
-def analyze_browser_history(user_id: str, entries: list[dict]) -> list[PathNotTaken]:
-    from collections import Counter
-    from urllib.parse import urlparse
-
-    paths = []
-
-    # Group visits by domain
-    domain_visits: dict[str, list[dict]] = {}
-    for entry in entries:
         try:
-            domain = urlparse(entry["url"]).netloc
-        except Exception:
-            continue
-        domain_visits.setdefault(domain, []).append(entry)
-
-    # Find abandoned sites: domains visited many times but not recently
-    # Sort entries by last_visit_time to find what's recent vs old
-    all_times = []
-    for entry in entries:
-        t = entry.get("last_visit_time")
-        if t:
-            all_times.append(t)
-    all_times.sort()
-
-    if len(all_times) >= 2:
-        # Use the median as a rough "recent" cutoff
-        midpoint = all_times[len(all_times) // 2]
-
-        for domain, visits in domain_visits.items():
-            # Skip common/utility sites
-            if any(skip in domain for skip in [
-                "google", "facebook", "twitter", "x.com",
-                "localhost", "127.0.0.1", "chrome", "new-tab",
-            ]):
-                continue
-
-            total_visits = sum(v.get("visit_count", 1) for v in visits)
-            if total_visits < 5:
-                continue
-
-            # Check if all visits are old (before midpoint)
-            recent = [v for v in visits if (v.get("last_visit_time") or "") >= midpoint]
-            if len(recent) == 0:
-                # All visits are old — this is an abandoned site
-                top_title = max(visits, key=lambda v: v.get("visit_count", 0)).get("title", domain)
-                paths.append(
-                    PathNotTaken(
-                        user_id=user_id,
-                        category="forgotten_interest",
-                        title=f"You Used to Visit: {domain}",
-                        description=(
-                            f"You visited {domain} at least {total_visits} times "
-                            f"(e.g. \"{top_title}\") but haven't been back recently. "
-                            f"What drew you there? What changed?"
-                        ),
-                        evidence_json=json.dumps({
-                            "domain": domain,
-                            "total_visits": total_visits,
-                            "sample_pages": [v.get("title") for v in visits[:5]],
-                        }),
-                        source_service="google",
-                        confidence=0.6,
-                        timeline_date=visits[0].get("last_visit_time", "")[:10],
-                    )
-                )
-
-    # Find rabbit holes: single-session deep dives (many pages on one domain)
-    domain_page_counts = {d: len(v) for d, v in domain_visits.items()}
-    for domain, count in sorted(domain_page_counts.items(), key=lambda x: -x[1]):
-        if count < 15:
-            break
-        if any(skip in domain for skip in [
-            "google", "facebook", "twitter", "x.com",
-            "youtube", "reddit", "github",
-            "localhost", "127.0.0.1", "chrome",
-        ]):
-            continue
-
-        sample_titles = [v.get("title", "") for v in domain_visits[domain][:5]]
-        paths.append(
-            PathNotTaken(
-                user_id=user_id,
-                category="forgotten_interest",
-                title=f"Deep Dive: {domain}",
-                description=(
-                    f"You visited {count} different pages on {domain}. "
-                    f"That's a serious rabbit hole. What were you researching?"
-                ),
-                evidence_json=json.dumps({
-                    "domain": domain,
-                    "page_count": count,
-                    "sample_titles": sample_titles,
-                }),
-                source_service="google",
-                confidence=0.5,
+            client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+            message = client.messages.create(
+                model="claude-opus-4-6",
+                max_tokens=4096,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": _build_user_message(merged)}],
             )
-        )
 
-        if len([p for p in paths if "Deep Dive" in p.title]) >= 5:
-            break
+            raw = message.content[0].text
+            # Strip markdown code fences if present
+            if raw.strip().startswith("```"):
+                raw = raw.strip().split("\n", 1)[1].rsplit("```", 1)[0]
 
-    return paths
+            result_json = json.loads(raw)
+            paths_data = result_json.get("paths", [])
+        except Exception as e:
+            logger.error(f"Claude analysis failed for {user_id}: {e}")
+            return
+
+        for p in paths_data:
+            try:
+                path = PathNotTaken(
+                    user_id=user_id,
+                    category=p.get("category", "forgotten_interest"),
+                    title=p.get("title", ""),
+                    description=p.get("description", ""),
+                    evidence_json=json.dumps(p.get("evidence", {})),
+                    source_service="google",
+                    confidence=float(p.get("confidence", 0.5)),
+                    timeline_date=p.get("timeline_date"),
+                )
+                db.add(path)
+            except Exception as e:
+                logger.error(f"Failed to create path: {e}")
+
+        await db.commit()
+        logger.info(f"Analysis complete for {user_id}: {len(paths_data)} paths generated")

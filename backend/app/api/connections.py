@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,9 +63,15 @@ async def trigger_collection(
     )
     conn = result.scalar_one_or_none()
     if not conn:
-        raise HTTPException(status_code=404, detail=f"No connection for {service}")
-
-    conn.status = "collecting"
+        conn = ServiceConnection(
+            user_id=user.id,
+            service=service,
+            cookies_encrypted=b"",
+            status="collecting",
+        )
+        db.add(conn)
+    else:
+        conn.status = "collecting"
     await db.commit()
 
     from app.services.collection_service import run_collection
