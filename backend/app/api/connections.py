@@ -80,6 +80,41 @@ async def trigger_collection(
     return {"status": "collecting", "service": service}
 
 
+@router.post("/collect-all")
+async def trigger_all_collections(
+    body: CollectRequest,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Collect from all services sequentially using a single browser session."""
+    services = ["google", "history"]
+    for service in services:
+        result = await db.execute(
+            select(ServiceConnection).where(
+                ServiceConnection.user_id == user.id,
+                ServiceConnection.service == service,
+            )
+        )
+        conn = result.scalar_one_or_none()
+        if not conn:
+            conn = ServiceConnection(
+                user_id=user.id,
+                service=service,
+                cookies_encrypted=b"",
+                status="collecting",
+            )
+            db.add(conn)
+        else:
+            conn.status = "collecting"
+    await db.commit()
+
+    from app.services.collection_service import run_all_collections
+
+    background_tasks.add_task(run_all_collections, user.id, services, body.session_id)
+    return {"status": "collecting", "services": services}
+
+
 @router.delete("/{service}")
 async def delete_connection(
     service: str,

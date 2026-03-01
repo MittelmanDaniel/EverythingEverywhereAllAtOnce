@@ -12,6 +12,18 @@ def get_client() -> V2Client:
     return V2Client(api_key=settings.browser_use_api_key)
 
 
+async def stop_session(session_id: str) -> None:
+    """Stop a Browser Use session to free resources."""
+    client = get_client()
+    try:
+        await client.sessions.stop(session_id)
+        logger.info(f"Stopped session {session_id}")
+    except Exception as e:
+        logger.warning(f"Failed to stop session {session_id}: {e}")
+    finally:
+        await client.close()
+
+
 async def create_session(start_url: str = "https://accounts.google.com") -> tuple[str, str | None]:
     """Create a Browser Use session with keep_alive=True.
 

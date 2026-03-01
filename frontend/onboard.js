@@ -94,8 +94,8 @@ async function confirmLoggedIn() {
   status.className = 'step-status working';
 
   try {
-    // Trigger collection using the session the user logged into
-    await fetch(`${API}/api/connections/google/collect`, {
+    // Trigger all collections sequentially in the same browser session
+    await fetch(`${API}/api/connections/collect-all`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_id: activeSessionId })
@@ -113,7 +113,24 @@ async function pollCollectionStatus() {
   const data = await checkConnections();
   if (data && data.services) {
     const google = data.services.find(s => s.service === 'google');
-    if (google && google.status === 'collected') {
+    const history = data.services.find(s => s.service === 'history');
+
+    // Check for errors on either service
+    if ((google && google.status === 'error') || (history && history.status === 'error')) {
+      document.getElementById('s2-status').textContent = 'Collection failed — try again';
+      document.getElementById('s2-status').className = 'step-status';
+      document.getElementById('s2-btn').style.display = 'inline-block';
+      document.getElementById('s2-btn').disabled = false;
+      document.getElementById('s2-btn').textContent = 'Scan my Google';
+      document.getElementById('s2-confirm-btn').style.display = 'none';
+      document.getElementById('s2-live-container').style.display = 'none';
+      return;
+    }
+
+    // Both services must finish before advancing
+    const googleDone = google && google.status === 'collected';
+    const historyDone = history && history.status === 'collected';
+    if (googleDone && historyDone) {
       document.getElementById('s2-status').textContent = 'Collection complete';
       document.getElementById('s2-status').className = 'step-status ok';
       document.getElementById('s2-btn').style.display = 'none';
@@ -124,16 +141,14 @@ async function pollCollectionStatus() {
       startStep3();
       return;
     }
-    if (google && google.status === 'error') {
-      document.getElementById('s2-status').textContent = 'Collection failed — try again';
-      document.getElementById('s2-status').className = 'step-status';
-      document.getElementById('s2-btn').style.display = 'inline-block';
-      document.getElementById('s2-btn').disabled = false;
-      document.getElementById('s2-btn').textContent = 'Scan my Google';
-      document.getElementById('s2-confirm-btn').style.display = 'none';
-      document.getElementById('s2-live-container').style.display = 'none';
-      return;
-    }
+
+    // Update status with progress
+    const parts = [];
+    if (googleDone) parts.push('Google data ✓');
+    else parts.push('Google data...');
+    if (historyDone) parts.push('Browser history ✓');
+    else parts.push('Browser history...');
+    document.getElementById('s2-status').innerHTML = '<span class="spinner"></span>' + parts.join(' · ');
   }
   pollCollect = setTimeout(pollCollectionStatus, 3000);
 }
