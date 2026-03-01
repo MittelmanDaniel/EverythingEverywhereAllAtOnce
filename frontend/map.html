@@ -389,11 +389,12 @@ function showV(idx){
   const d=D[idx],a=d.a;
   document.querySelectorAll('.mc').forEach(e=>e.classList.add('h'));document.body.style.cursor='default';
 
-  // In public view, hide generate/pull buttons
-  const genBlock = isPublicView ? `<div class="vctr"><div class="gl">Viewing another multiverse</div></div>`
-    : (d.video
-      ?`<video class="verse-video" src="${d.video}" controls playsinline preload="metadata"></video>`
-      :`<div class="vctr">
+  // Show video if available; in public view hide generate button; in private view show generate button
+  const genBlock = d.video
+    ? `<video class="verse-video" src="${d.video}" controls playsinline preload="metadata"></video>`
+    : (isPublicView
+      ? `<div class="vctr"><div class="gl">Viewing another multiverse</div></div>`
+      : `<div class="vctr">
       <div class="gb" id="gb" onclick="genV(${idx})"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg></div>
       <div class="gl" id="gl">Generate this verse</div></div>`);
 
@@ -439,21 +440,25 @@ async function pullTL(idx){
   const area=document.getElementById('ga'),nar=document.getElementById('gn');
   area.classList.add('vis');
   nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Opening a portal into this timeline...</span>';
+  // Open window immediately in click handler to avoid popup blocker
+  const portal=window.open('about:blank','_blank');
   try{
     const res=await fetch(`${API}/api/verses/explore`,{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
-      body:JSON.stringify({title:d.t,description:d.a.cv,url:d.url})
+      body:JSON.stringify({verse_id:d.id,title:d.t,description:d.a.cv,url:d.url})
     });
     if(!res.ok) throw new Error('Failed to create session');
     const {live_url}=await res.json();
     if(live_url){
       nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Portal open — launching in new tab...</span>';
-      window.open(live_url,'_blank');
+      if(portal) portal.location.href=live_url; else window.open(live_url,'_blank');
     }else{
+      if(portal) portal.close();
       nar.innerHTML='<span class="sn vis" style="color:var(--rose)">Could not open portal — no live URL returned.</span>';
     }
   }catch(e){
+    if(portal) portal.close();
     nar.innerHTML='<span class="sn vis" style="color:var(--rose)">This timeline is temporarily unreachable.</span>';
   }
 }

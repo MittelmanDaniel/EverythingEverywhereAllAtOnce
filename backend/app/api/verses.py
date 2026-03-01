@@ -227,6 +227,7 @@ async def generate_narrative(
 
 
 class ExploreRequest(BaseModel):
+    verse_id: str = ""
     title: str
     description: str
     url: str = ""
@@ -253,6 +254,11 @@ async def explore_verse(
     user: User = Depends(get_current_user),
 ):
     """Create a live browser session and start an agent to explore a verse."""
+    is_yc_demo = (
+        req.verse_id == "demo-verse-006-yc-app"
+        or "yc w23 application" in req.title.lower()
+    )
+
     # Figure out a starting URL from the evidence
     evidence = {}
     try:
@@ -269,15 +275,59 @@ async def explore_verse(
     # Fall back to a Google search for the title
     if not start_url:
         start_url = f"https://www.google.com/search?q={req.title.replace(' ', '+')}"
+    # YC demo: begin with idea research first, not on the YC page.
+    if is_yc_demo:
+        start_url = "https://www.google.com/search?q=palantir+for+hollywood+startup+ideas"
 
     session_id, live_url = await create_session(start_url=start_url)
 
-    task = f"""You are helping a user finally follow through on something they hesitated to do.
+    if is_yc_demo:
+        task = f"""You are helping a user finally follow through on something they hesitated to do.
 
 Background: {req.title}
 {req.description}
 
-{"Navigate to " + start_url + "." if start_url else "Search for what's needed to make this happen."}
+Follow this exact sequence:
+
+STEP 1 — RESEARCH (spend real time here, do not rush):
+You are on a Google search results page for "palantir for hollywood startup ideas".
+- Click on at least 3 different search results that look relevant to data analytics, AI, or tech for the entertainment/Hollywood industry.
+- For each result, actually READ the page content — scroll down, look for key insights, market data, competitor info, or interesting angles.
+- After reading each page, use the browser back button or open a new search to continue exploring.
+- Try at least one more search query like "AI tools for film production" or "entertainment industry data analytics startups" and click through those results too.
+- You should spend meaningful time on this step — click links, scroll pages, read articles. Do NOT just glance at the Google results page and move on.
+
+STEP 2 — NAVIGATE TO YC:
+Once you have gathered insights from multiple sources, navigate to: https://www.ycombinator.com/apply
+
+STEP 3 — WAIT:
+Stop there and wait for user input before filling or submitting any form fields.
+
+Your job is to help the user actually DO the thing they never did — sign up, book it, apply, finish it, send it, buy it, whatever it was.
+Be proactive and action-oriented. Don't just show them information — help them take the first real step.
+The user can see and interact with the browser alongside you.
+Do not fill any application form fields until the user explicitly asks you to continue.
+"""
+    else:
+        is_google_search = start_url.startswith("https://www.google.com/search")
+        if is_google_search:
+            research_instructions = f"""You are on a Google search results page. Do NOT just look at it and stop.
+- Click on at least 2-3 search results that look most relevant to "{req.title}".
+- For each result, actually READ the page — scroll down, look for useful information, actionable links, sign-up pages, or next steps.
+- After reading each page, navigate back or search again to explore more angles.
+- Once you have enough context, find the most actionable next step (a sign-up page, application form, booking site, etc.) and navigate there."""
+        else:
+            research_instructions = f"""Navigate to {start_url}.
+- Actually explore the page — scroll down, read the content, click on relevant links.
+- Look for actionable next steps: sign-up buttons, application forms, booking options, purchase links, etc.
+- If this is a search page, click on at least 2-3 results and read them before deciding on a next step."""
+
+        task = f"""You are helping a user finally follow through on something they hesitated to do.
+
+Background: {req.title}
+{req.description}
+
+{research_instructions}
 
 Your job is to help the user actually DO the thing they never did — sign up, book it, apply, finish it, send it, buy it, whatever it was.
 Be proactive and action-oriented. Don't just show them information — help them take the first real step.

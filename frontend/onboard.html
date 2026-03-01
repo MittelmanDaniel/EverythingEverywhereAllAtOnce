@@ -28,7 +28,10 @@
         <iframe id="s2-live-iframe" style="width:100%;height:500px;border:1px solid rgba(255,255,255,0.15);border-radius:8px;margin:12px 0;background:#000"></iframe>
       </div>
       <button class="btn btn-primary" id="s2-btn" onclick="collectGoogle()">Scan my Google</button>
-      <button class="btn btn-warm" id="s2-confirm-btn" onclick="confirmLoggedIn()" style="display:none">I'm logged in — start scanning</button>
+      <div id="s2-scan-btns" style="display:none">
+        <button class="btn btn-warm" id="s2-google-btn" onclick="startGoogleScan()">Scan Google Data</button>
+        <button class="btn btn-warm" id="s2-history-btn" onclick="startHistoryScan()">Scan Browser History</button>
+      </div>
     </div>
 
     <!-- Step 3: Enter Your Multiverse -->

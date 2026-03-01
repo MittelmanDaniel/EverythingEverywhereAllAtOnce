@@ -76,7 +76,7 @@ async function collectGoogle() {
     status.textContent = 'Log into your Google account in the browser above';
     status.className = 'step-status working';
     btn.style.display = 'none';
-    document.getElementById('s2-confirm-btn').style.display = 'inline-block';
+    document.getElementById('s2-scan-btns').style.display = 'block';
   } catch (e) {
     status.textContent = 'Failed to start browser — try again';
     status.className = 'step-status';
@@ -85,27 +85,41 @@ async function collectGoogle() {
   }
 }
 
-async function confirmLoggedIn() {
-  const confirmBtn = document.getElementById('s2-confirm-btn');
-  const status = document.getElementById('s2-status');
-  confirmBtn.disabled = true;
-  confirmBtn.textContent = 'Scanning...';
-  status.innerHTML = '<span class="spinner"></span>Collecting your data...';
-  status.className = 'step-status working';
+let isPolling = false;
+
+async function startGoogleScan() {
+  const btn = document.getElementById('s2-google-btn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning...';
 
   try {
-    // Trigger all collections sequentially in the same browser session
-    await fetch(`${API}/api/connections/collect-all`, {
+    await fetch(`${API}/api/connections/google/collect`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_id: activeSessionId })
     });
-    pollCollectionStatus();
+    if (!isPolling) { isPolling = true; pollCollectionStatus(); }
   } catch {
-    status.textContent = 'Failed to start collection — try again';
-    status.className = 'step-status';
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = "I'm logged in — start scanning";
+    btn.disabled = false;
+    btn.textContent = 'Scan Google Data';
+  }
+}
+
+async function startHistoryScan() {
+  const btn = document.getElementById('s2-history-btn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning...';
+
+  try {
+    await fetch(`${API}/api/connections/history/collect`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: activeSessionId })
+    });
+    if (!isPolling) { isPolling = true; pollCollectionStatus(); }
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Scan Browser History';
   }
 }
 
@@ -122,8 +136,9 @@ async function pollCollectionStatus() {
       document.getElementById('s2-btn').style.display = 'inline-block';
       document.getElementById('s2-btn').disabled = false;
       document.getElementById('s2-btn').textContent = 'Scan my Google';
-      document.getElementById('s2-confirm-btn').style.display = 'none';
+      document.getElementById('s2-scan-btns').style.display = 'none';
       document.getElementById('s2-live-container').style.display = 'none';
+      isPolling = false;
       return;
     }
 
@@ -134,8 +149,9 @@ async function pollCollectionStatus() {
       document.getElementById('s2-status').textContent = 'Collection complete';
       document.getElementById('s2-status').className = 'step-status ok';
       document.getElementById('s2-btn').style.display = 'none';
-      document.getElementById('s2-confirm-btn').style.display = 'none';
+      document.getElementById('s2-scan-btns').style.display = 'none';
       document.getElementById('s2-live-container').style.display = 'none';
+      isPolling = false;
       showServices(data.services);
       activateStep(3);
       startStep3();

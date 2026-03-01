@@ -14,13 +14,11 @@ router = APIRouter(prefix="/video", tags=["video"])
 
 
 class VideoGenerateRequest(BaseModel):
-    """Request to generate a Seedance 1.5 video showing the life that was missed."""
+    """Request to generate a MiniMax video-01 video showing the life that was missed."""
 
     prompt: str  # e.g. "A person finally stepping on stage at a ballet recital..."
     image_url: str = ""  # optional reference image for image-to-video
-    duration: str = "5"  # seconds: "5" or "10"
-    aspect_ratio: str = "16:9"  # "16:9", "9:16", "1:1"
-    seed: int | None = None
+    prompt_optimizer: bool = True  # let MiniMax optimize the prompt
 
 
 class VideoGenerateResponse(BaseModel):
@@ -36,8 +34,8 @@ class VideoStatusResponse(BaseModel):
 
 
 FAL_BASE = "https://queue.fal.run"
-SEEDANCE_TEXT_TO_VIDEO = "fal-ai/seedance-1-5/text-to-video"
-SEEDANCE_IMAGE_TO_VIDEO = "fal-ai/seedance-1-5/image-to-video"
+MINIMAX_TEXT_TO_VIDEO = "fal-ai/minimax/video-01"
+MINIMAX_IMAGE_TO_VIDEO = "fal-ai/minimax/video-01/image-to-video"
 
 
 def _build_prompt(user_prompt: str) -> str:
@@ -54,22 +52,19 @@ async def generate_video(
     req: VideoGenerateRequest,
     user: User = Depends(get_current_user),
 ):
-    """Submit a Seedance 1.5 video generation job for a verse's missed life."""
+    """Submit a MiniMax video-01 video generation job for a verse's missed life."""
     if not settings.fal_api_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Video generation not configured",
         )
 
-    endpoint = SEEDANCE_IMAGE_TO_VIDEO if req.image_url else SEEDANCE_TEXT_TO_VIDEO
+    endpoint = MINIMAX_IMAGE_TO_VIDEO if req.image_url else MINIMAX_TEXT_TO_VIDEO
 
     payload = {
         "prompt": _build_prompt(req.prompt),
-        "duration": req.duration,
-        "aspect_ratio": req.aspect_ratio,
+        "prompt_optimizer": req.prompt_optimizer,
     }
-    if req.seed is not None:
-        payload["seed"] = req.seed
     if req.image_url:
         payload["image_url"] = req.image_url
 
@@ -85,7 +80,7 @@ async def generate_video(
         )
 
     if resp.status_code != 200:
-        logger.error(f"Seedance submit failed: {resp.status_code} {resp.text}")
+        logger.error(f"MiniMax submit failed: {resp.status_code} {resp.text}")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Video generation request failed",
@@ -104,7 +99,7 @@ async def get_video_status(
     request_id: str,
     user: User = Depends(get_current_user),
 ):
-    """Poll the status of a Seedance 1.5 video generation job."""
+    """Poll the status of a MiniMax video-01 video generation job."""
     if not settings.fal_api_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -113,7 +108,7 @@ async def get_video_status(
 
     async with httpx.AsyncClient() as client:
         resp = await client.get(
-            f"{FAL_BASE}/{SEEDANCE_TEXT_TO_VIDEO}/requests/{request_id}/status",
+            f"{FAL_BASE}/{MINIMAX_TEXT_TO_VIDEO}/requests/{request_id}/status",
             headers={"Authorization": f"Key {settings.fal_api_key}"},
             timeout=15.0,
         )
@@ -127,7 +122,7 @@ async def get_video_status(
         # Fetch the result to get the video URL
         async with httpx.AsyncClient() as client:
             result_resp = await client.get(
-                f"{FAL_BASE}/{SEEDANCE_TEXT_TO_VIDEO}/requests/{request_id}",
+                f"{FAL_BASE}/{MINIMAX_TEXT_TO_VIDEO}/requests/{request_id}",
                 headers={"Authorization": f"Key {settings.fal_api_key}"},
                 timeout=15.0,
             )
