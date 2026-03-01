@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Everything Everywhere All At Once",
+  "version": "1.0.0",
+  "description": "Connect your digital life to discover paths not taken",
+  "permissions": ["cookies", "storage"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}
