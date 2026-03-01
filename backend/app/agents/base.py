@@ -12,7 +12,7 @@ def get_client() -> V2Client:
     return V2Client(api_key=settings.browser_use_api_key)
 
 
-async def create_session() -> tuple[str, str | None]:
+async def create_session(start_url: str = "https://accounts.google.com") -> tuple[str, str | None]:
     """Create a Browser Use session with keep_alive=True.
 
     Returns (session_id, live_url).
@@ -21,7 +21,7 @@ async def create_session() -> tuple[str, str | None]:
     try:
         session = await client.sessions.create(
             keep_alive=True,
-            start_url="https://accounts.google.com",
+            start_url=start_url,
         )
         session_id = str(session.id)
         live_url = session.live_url

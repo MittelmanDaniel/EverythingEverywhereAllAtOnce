@@ -260,13 +260,13 @@ function buildScene(){
     const geo=new THREE.BufferGeometry();
     const pos=new Float32Array(60*3);geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
     const [r,g,b]=d.c.map(v=>v/255);
-    const mat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.22+d.zone*.03});
+    const mat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.7+d.zone*.05});
     const line=new THREE.Line(geo,mat);scene.add(line);
     threads.push({line,geo,toIdx:i,offset:Math.random()*10,baseOp:.22+d.zone*.03});
     if(i<D.length-1){
       const geo2=new THREE.BufferGeometry();
       const pos2=new Float32Array(30*3);geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
-      const mat2=new THREE.LineBasicMaterial({color:0xa89eb8,transparent:true,opacity:.08});
+      const mat2=new THREE.LineBasicMaterial({color:0xa89eb8,transparent:true,opacity:.35});
       const line2=new THREE.Line(geo2,mat2);scene.add(line2);
       threads.push({line:line2,geo:geo2,fromIdx:i,toIdx:i+1,offset:Math.random()*10,baseOp:.08});
     }
@@ -435,16 +435,27 @@ async function genV(idx){
 }
 
 async function pullTL(idx){
-  const area=document.getElementById('ga'),nar=document.getElementById('gn');area.classList.add('vis');
-  nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Mapping path into this timeline...</span>';const d=D[idx];
-  const prompt=`Someone explored an alternate life based on: "${d.t}" (${d.w}). Verse: "${d.a.t}" — ${d.a.s}. This life is in the "${ZONES[d.zone]}" zone — ${d.zone>=3?'radically different from their current life':'a plausible nearby life'}. Write 5 concrete, specific, poetic-but-actionable steps for THIS WEEK. Be specific. Warm, direct, urgent — advice from a future self. Return ONLY 5 numbered steps.`;
+  const d=D[idx];
+  const area=document.getElementById('ga'),nar=document.getElementById('gn');
+  area.classList.add('vis');
+  nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Opening a portal into this timeline...</span>';
   try{
-    const res=await fetch(`${API}/api/verses/generate`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},body:JSON.stringify({prompt,max_tokens:1000})});
-    const data=await res.json();const text=data.content.map(c=>c.text||'').join('');
-    const steps=text.split(/\d+[\.\)]\s*/).filter(Boolean);
-    nar.innerHTML=`<div class="ga-l" style="color:var(--warm);margin-bottom:16px">PULL INTO THIS TIMELINE — THIS WEEK</div>`+steps.map((s,i)=>`<span class="sn" style="animation-delay:${i*.4}s;display:block;margin-bottom:14px;padding-left:16px;border-left:1px solid var(--s600)">${s.trim()}</span>`).join('');
-    setTimeout(()=>{nar.querySelectorAll('.sn').forEach((el,i)=>{setTimeout(()=>el.classList.add('vis'),i*400)})},100);
-  }catch(e){nar.innerHTML='<span class="sn vis" style="color:var(--rose)">This path is temporarily unreachable.</span>'}
+    const res=await fetch(`${API}/api/verses/explore`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
+      body:JSON.stringify({title:d.t,description:d.a.cv,url:d.url})
+    });
+    if(!res.ok) throw new Error('Failed to create session');
+    const {live_url}=await res.json();
+    if(live_url){
+      nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Portal open — launching in new tab...</span>';
+      window.open(live_url,'_blank');
+    }else{
+      nar.innerHTML='<span class="sn vis" style="color:var(--rose)">Could not open portal — no live URL returned.</span>';
+    }
+  }catch(e){
+    nar.innerHTML='<span class="sn vis" style="color:var(--rose)">This timeline is temporarily unreachable.</span>';
+  }
 }
 
 // ============ LOAD DATA FROM API ============

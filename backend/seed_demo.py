@@ -28,7 +28,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.85,
         "timeline_date": "2022-02",
-        "evidence_json": json.dumps({"domain": "maps.google.com/dir/pacific-heights/half-moon-bay"}),
+        "evidence_json": json.dumps({"url": "https://www.google.com/maps/dir/San+Francisco/Half+Moon+Bay"}),
     },
     {
         "category": "abandoned_project",
@@ -37,7 +37,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.9,
         "timeline_date": "2019-12",
-        "evidence_json": json.dumps({"domain": "docs.google.com/d/untitled-letter-never-sent"}),
+        "evidence_json": json.dumps({"url": "https://docs.google.com/document/create"}),
     },
     {
         "category": "dormant_period",
@@ -46,7 +46,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.7,
         "timeline_date": "2018-03",
-        "evidence_json": json.dumps({"domain": "sfballet.org/season/swan-lake-tickets"}),
+        "evidence_json": json.dumps({"url": "https://www.sfballet.org/2025-2026-season/"}),
     },
     {
         "category": "abandoned_project",
@@ -55,7 +55,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.65,
         "timeline_date": "2020-11",
-        "evidence_json": json.dumps({"domain": "google.com/search?q=is+it+too+late+to+change+careers+at+27"}),
+        "evidence_json": json.dumps({"url": "https://www.google.com/search?q=is+it+too+late+to+change+careers+at+27"}),
     },
     {
         "category": "abandoned_project",
@@ -64,7 +64,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.8,
         "timeline_date": "2021-01",
-        "evidence_json": json.dumps({"domain": "docs.google.com/document/d/the-novel-draft-41k-words"}),
+        "evidence_json": json.dumps({"url": "https://docs.google.com/document/create"}),
     },
     {
         "category": "abandoned_project",
@@ -73,7 +73,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.75,
         "timeline_date": "2022-10",
-        "evidence_json": json.dumps({"domain": "apply.ycombinator.com/submit"}),
+        "evidence_json": json.dumps({"url": "https://www.ycombinator.com/apply"}),
     },
     {
         "category": "forgotten_interest",
@@ -82,7 +82,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.55,
         "timeline_date": "2019-08",
-        "evidence_json": json.dumps({"domain": "airbnb.com/rooms/lisbon-alfama-artist-studio"}),
+        "evidence_json": json.dumps({"url": "https://www.airbnb.com/s/Alfama--Lisbon/homes?query=artist+studio"}),
     },
     {
         "category": "forgotten_interest",
@@ -91,7 +91,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.5,
         "timeline_date": "2021-05",
-        "evidence_json": json.dumps({"domain": "dhamma.org/en/schedules/vipassana-10-day"}),
+        "evidence_json": json.dumps({"url": "https://www.dhamma.org/en/schedules/schmahi"}),
     },
     {
         "category": "dormant_period",
@@ -100,7 +100,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.45,
         "timeline_date": "2017-10",
-        "evidence_json": json.dumps({"domain": "github.com/new — repo: 'dream-journal-ai'"}),
+        "evidence_json": json.dumps({"url": "https://github.com/new"}),
     },
     {
         "category": "dormant_period",
@@ -109,7 +109,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.4,
         "timeline_date": "2023-07",
-        "evidence_json": json.dumps({"domain": "letterboxd.com/list/films-about-people-who-disappear"}),
+        "evidence_json": json.dumps({"url": "https://letterboxd.com/search/films/about+people+who+disappear/"}),
     },
     {
         "category": "dormant_period",
@@ -118,7 +118,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.3,
         "timeline_date": "2016-06",
-        "evidence_json": json.dumps({"domain": "craigslist.org/van-conversion-sprinter-diy"}),
+        "evidence_json": json.dumps({"url": "https://www.reddit.com/r/vandwellers/"}),
     },
     {
         "category": "forgotten_interest",
@@ -127,7 +127,7 @@ DEMO_PATHS = [
         "source_service": "google",
         "confidence": 0.25,
         "timeline_date": "2015-09",
-        "evidence_json": json.dumps({"domain": "juilliard.edu/admissions/acting-mfa-application"}),
+        "evidence_json": json.dumps({"url": "https://apply.juilliard.edu/apply/"}),
     },
 ]
 
