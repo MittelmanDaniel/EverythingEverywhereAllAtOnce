@@ -1,0 +1,30 @@
+body{background:var(--void);color:var(--s100);font-family:'Playfair Display',serif;height:100vh;width:100vw;overflow:hidden;display:flex;align-items:center;justify-content:center}
+
+.wrap{position:relative;z-index:10;text-align:center;max-width:480px;padding:0 24px}
+
+.title{font-family:'Instrument Serif',serif;font-weight:400;font-size:11px;letter-spacing:8px;text-transform:uppercase;color:var(--s400);margin-bottom:48px;opacity:0;animation:fd 1.4s ease .2s forwards}
+
+h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:44px;line-height:1.15;color:var(--s100);margin-bottom:14px;opacity:0;animation:fd 1.4s ease .4s forwards}
+h1 em{font-style:italic;color:var(--warm)}
+
+.sub{font-family:'Playfair Display',serif;font-weight:300;font-style:italic;font-size:17px;color:var(--s300);line-height:1.5;margin-bottom:52px;opacity:0;animation:fd 1.4s ease .7s forwards}
+
+.form{opacity:0;animation:fd 1.4s ease 1s forwards}
+.form input{display:block;width:100%;padding:14px 18px;margin-bottom:12px;background:rgba(200,190,225,.04);border:1px solid rgba(200,190,225,.08);border-radius:5px;color:var(--s100);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.5px;outline:none;transition:border-color .3s}
+.form input::placeholder{color:var(--s500)}
+.form input:focus{border-color:rgba(180,143,212,.35)}
+
+.form button{width:100%;padding:14px;border:none;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .35s;margin-bottom:10px}
+.btn-primary{background:rgba(180,143,212,.15);color:var(--violet);border:1px solid rgba(180,143,212,.2) !important}
+.btn-primary:hover{background:rgba(180,143,212,.25);color:var(--s100)}
+.btn-secondary{background:transparent;color:var(--s500);border:1px solid rgba(200,190,225,.06) !important}
+.btn-secondary:hover{color:var(--s300);border-color:rgba(200,190,225,.15) !important}
+
+.err{font-family:'DM Mono',monospace;font-size:10px;color:var(--rose);margin-bottom:12px;min-height:16px}
+
+.toggle{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s500);margin-top:22px}
+.toggle a{color:var(--violet);text-decoration:none;cursor:pointer;transition:color .3s}
+.toggle a:hover{color:var(--warm)}
+
+.footer{position:fixed;bottom:28px;left:0;right:0;text-align:center;z-index:10;opacity:0;animation:fu 1.4s ease 1.6s forwards}
+.footer span{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--s600);text-transform:uppercase}

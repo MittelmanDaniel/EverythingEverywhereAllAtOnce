@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verse Walker</title>
+<link rel="stylesheet" href="/shared.css">
+<style>
+  body{background:var(--void);color:var(--s100);font-family:'Playfair Display',serif;overflow:hidden;height:100vh;width:100vw;cursor:crosshair}
+  #c{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1}
+  .vig{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;background:radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(3,2,6,.45)70%,rgba(3,2,6,.85)100%)}
+  .grain{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .ui{position:fixed;z-index:10;pointer-events:none}
+  .hd{top:34px;left:42px;opacity:0;animation:fd 1.6s ease .4s forwards}
+  .hd h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:11px;letter-spacing:8px;text-transform:uppercase;color:var(--s400)}
+  .hd .sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s500);margin-top:5px}
+  .fl{bottom:28px;left:42px;opacity:0;animation:fu 1.6s ease 1s forwards}
+  .fl span{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s500)}.fl em{color:var(--s300);font-style:normal}
+  .fr{bottom:28px;right:42px;text-align:right;opacity:0;animation:fu 1.6s ease 1.4s forwards}
+  .fr p{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--s600);line-height:2;text-transform:uppercase}
+  .mc{transition:opacity .7s}.mc.h{opacity:0}
+
+  /* Distance indicator */
+  .dist-ind{position:fixed;top:50%;right:42px;transform:translateY(-50%);z-index:10;pointer-events:none;opacity:0;animation:fu 2s ease 2s forwards}
+  .dist-bar{width:2px;height:180px;background:linear-gradient(to bottom,var(--s100),var(--violet),var(--rose),rgba(255,100,80,.8));border-radius:2px;position:relative;opacity:.25}
+  .dist-marker{position:absolute;left:-4px;width:10px;height:2px;background:var(--s100);border-radius:1px;transition:top .5s cubic-bezier(.16,1,.3,1)}
+  .dist-labels{position:absolute;left:14px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between}
+  .dist-labels span{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--s600);white-space:nowrap}
+
+  #tip{position:fixed;z-index:50;pointer-events:none;opacity:0;transition:opacity .3s;max-width:320px}
+  #tip.vis{opacity:1}
+  .tp{background:rgba(6,4,12,.94);border:1px solid rgba(200,190,225,.08);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-radius:6px;padding:18px 22px;box-shadow:0 24px 70px rgba(0,0,0,.7),0 0 1px rgba(200,190,225,.15)}
+  .tp-t{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--violet);text-transform:uppercase;margin-bottom:7px}
+  .tp-u{font-family:'DM Mono',monospace;font-size:8px;color:var(--cool);opacity:.45;margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+  .tp-tl{font-family:'Playfair Display',serif;font-size:15px;line-height:1.4;color:var(--s100);margin-bottom:7px}
+  .tp-w{font-family:'Instrument Serif',serif;font-style:italic;font-size:13px;line-height:1.45;color:var(--warm);opacity:.75}
+  .tp-d{margin-top:10px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1.5px;color:var(--s600);text-transform:uppercase}
+  .tp-c{margin-top:8px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--s500)}.tp-c span{color:var(--s300)}
+
+  #po{position:fixed;top:0;left:0;width:100%;height:100%;z-index:60;pointer-events:none;opacity:0}#po.on{opacity:1;pointer-events:all}#po canvas{width:100%;height:100%}
+
+  #vv{position:fixed;top:0;left:0;width:100%;height:100%;z-index:50;opacity:0;pointer-events:none;overflow-y:auto;overflow-x:hidden;background:var(--void);transition:opacity .5s}
+  #vv.on{opacity:1;pointer-events:all}#vv::-webkit-scrollbar{width:3px}#vv::-webkit-scrollbar-thumb{background:var(--s600);border-radius:2px}#vv::-webkit-scrollbar-track{background:transparent}
+  .vb{position:fixed;top:30px;left:38px;z-index:55;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--s500);cursor:pointer;padding:8px 14px;border:1px solid rgba(200,190,225,.07);border-radius:3px;background:rgba(6,4,12,.85);backdrop-filter:blur(12px);transition:all .3s;display:none}.vb:hover{color:var(--s200);border-color:var(--s400)}.vb.vis{display:block}
+  .vc{max-width:620px;margin:0 auto;padding:110px 36px 100px}
+  .vo{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--violet);margin-bottom:7px;opacity:0;transform:translateY(14px)}
+  .vurl{font-family:'DM Mono',monospace;font-size:9px;color:var(--cool);opacity:0;margin-bottom:30px;transform:translateY(14px)}
+  .vtit{font-family:'Instrument Serif',serif;font-weight:400;font-size:42px;line-height:1.18;color:var(--s100);margin-bottom:10px;opacity:0;transform:translateY(22px)}
+  .vsub{font-family:'Playfair Display',serif;font-style:italic;font-weight:300;font-size:18px;color:var(--warm);opacity:0;margin-bottom:48px;transform:translateY(16px)}
+  .rv{animation:ru .9s ease forwards}
+  .va-w{width:100%;aspect-ratio:16/9;border-radius:6px;position:relative;overflow:hidden;margin-bottom:48px;border:1px solid rgba(200,190,225,.05);opacity:0;transform:translateY(18px)}.va-w.rv{animation:ru 1s ease forwards}
+  .vbg{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(155deg,#0d0b15,#080611)}.vbg::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(180,143,212,.055) 0%,transparent 55%),radial-gradient(ellipse at 70% 60%,rgba(139,159,212,.04) 0%,transparent 55%)}
+  .vctr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:13px}
+  .gb{width:62px;height:62px;border-radius:50%;border:1.5px solid var(--s500);background:rgba(200,190,225,.025);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .5s cubic-bezier(.16,1,.3,1)}
+  .gb:hover{border-color:var(--warm);box-shadow:0 0 45px rgba(212,165,116,.12);transform:scale(1.08)}.gb:hover svg{fill:var(--warm)}
+  .gb svg{width:17px;height:17px;fill:var(--s300);margin-left:3px;transition:fill .3s}
+  .gb.ld{border-color:var(--violet);animation:pu 2s ease infinite;pointer-events:none}.gb.ld svg{display:none}.gb.ld::after{content:'';width:17px;height:17px;border:1.5px solid transparent;border-top-color:var(--violet);border-radius:50%;animation:sp .8s linear infinite}
+  .gl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--s500)}
+  .scn{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:.012;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(200,190,225,.08) 2px,rgba(200,190,225,.08) 4px)}
+  .verse-video{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1}
+  .ga{margin-bottom:48px;display:none}.ga.vis{display:block}
+  .ga-l{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--vd);margin-bottom:18px}
+  .ga-n{font-family:'Playfair Display',serif;font-weight:300;font-size:18px;line-height:1.85;color:var(--s200)}
+  .ga-n .sn{opacity:0;display:inline}.ga-n .sn.vis{animation:sf .8s ease forwards}
+  .acts{display:flex;flex-direction:column;gap:1px;margin-bottom:48px;border-radius:5px;overflow:hidden;opacity:0;transform:translateY(14px)}.acts.rv{animation:ru .8s ease forwards}
+  .ab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:15px 18px;background:rgba(200,190,225,.018);color:var(--s400);cursor:pointer;transition:all .35s;display:flex;justify-content:space-between;align-items:center;border:none;width:100%;text-align:left}
+  .ab:hover{background:rgba(212,165,116,.04);color:var(--s100)}.ab .ar{opacity:0;transform:translateX(-8px);transition:all .35s;color:var(--warm)}.ab:hover .ar{opacity:1;transform:translateX(0)}
+  .ab.rx:hover{background:rgba(139,159,212,.04)}.ab.rx:hover .ar{color:var(--cool)}.ab.lg:hover{background:rgba(196,122,138,.035)}.ab.lg:hover .ar{color:var(--rose)}
+  .cv{padding-top:38px;border-top:1px solid rgba(200,190,225,.045);margin-bottom:80px;opacity:0;transform:translateY(14px)}.cv.rv{animation:ru .8s ease forwards}
+  .cv-l{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:4px;text-transform:uppercase;color:var(--violet);margin-bottom:14px}
+  .cv-t{font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;line-height:1.55;color:var(--warm);opacity:.75}
+  @keyframes fd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes ru{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes sf{from{opacity:0}to{opacity:1}}
+  @keyframes pu{0%,100%{box-shadow:0 0 0 0 rgba(180,143,212,.2)}50%{box-shadow:0 0 0 16px rgba(180,143,212,0)}}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="vig"></div>
+<div class="grain"></div>
+
+<div class="ui hd mc"><h1>Everything Everywhere All at Once</h1><div class="sub">The white center is you. The further out you go, the stranger the life.</div><a href="/explore" style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--s500);text-decoration:none;margin-top:8px;display:inline-block;pointer-events:all;transition:color .3s" onmouseover="this.style.color='var(--violet)'" onmouseout="this.style.color='var(--s500)'">← Explore other multiverses</a></div>
+<div class="ui fl mc"><span><em id="st">0</em> threads · <em id="sv">0</em> verses · distance: <em id="sd">0</em></span></div>
+<div class="ui fr mc"><p>Drag to orbit · Scroll to zoom</p><p>Explore outward — it never ends</p></div>
+
+<div class="dist-ind mc">
+  <div class="dist-bar"><div class="dist-marker" id="dm"></div></div>
+  <div class="dist-labels">
+    <span>You now</span>
+    <span>Adjacent</span>
+    <span>Divergent</span>
+    <span>Unrecognizable</span>
+  </div>
+</div>
+
+<div id="tip"><div class="tp">
+  <div class="tp-t" id="tt"></div><div class="tp-u" id="tu"></div>
+  <div class="tp-tl" id="ttl"></div><div class="tp-w" id="tw"></div>
+  <div class="tp-d" id="td"></div>
+  <div class="tp-c"><span>Click</span> to enter this verse</div>
+</div></div>
+
+<div id="po"><canvas id="pc"></canvas></div>
+<div id="vv">
+  <button class="vb" id="vb" onclick="exitV()">← Return to map</button>
+  <div class="vc" id="vvc"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const API = 'http://localhost:8000';
+const ZONES = ['Close — a version of you that almost happened','Adjacent — a familiar life, tilted','Divergent — you might not recognize yourself','Far reach — barely you anymore','Outer rim — a stranger with your eyes'];
+
+// ============ MODE DETECTION ============
+const params = new URLSearchParams(location.search);
+const viewUserId = params.get('user');
+const isPublicView = !!viewUserId;
+const token = localStorage.getItem('token');
+
+let D = [];
+
+// ============ THREE SETUP (runs immediately for starfield) ============
+const canvas=document.getElementById('c');
+const R=new THREE.WebGLRenderer({canvas,antialias:true});
+R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,2));
+R.setClearColor(0x030206);R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.4;
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x030206,0.004);
+const cam=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,4000);
+cam.position.set(0,8,20);
+
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
+
+// ============ CAMERA — infinite drag ============
+let camTheta=0,camPhi=Math.PI*.28,camDist=22,targetDist=22;
+let dragging=false,pmx=0,pmy=0,autoRot=true,autoTimer=null;
+let mx=0,my=0;
+
+canvas.addEventListener('mousedown',e=>{if(activeV!==null)return;dragging=true;pmx=e.clientX;pmy=e.clientY;autoRot=false;clearTimeout(autoTimer)});
+addEventListener('mouseup',()=>{dragging=false;autoTimer=setTimeout(()=>autoRot=true,4000)});
+addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  ptr.x=(e.clientX/innerWidth)*2-1;ptr.y=-(e.clientY/innerHeight)*2+1;
+  if(dragging){camTheta-=(e.clientX-pmx)*.004;camPhi-=(e.clientY-pmy)*.004;camPhi=Math.max(.08,Math.min(Math.PI-.08,camPhi));pmx=e.clientX;pmy=e.clientY}
+});
+canvas.addEventListener('wheel',e=>{if(activeV!==null)return;targetDist+=e.deltaY*.02;targetDist=Math.max(3,targetDist);e.preventDefault()},{passive:false});
+
+function updateCam(){
+  if(autoRot)camTheta+=.0008;
+  camDist+=(targetDist-camDist)*.06;
+  cam.position.x=camDist*Math.sin(camPhi)*Math.sin(camTheta);
+  cam.position.y=camDist*Math.cos(camPhi);
+  cam.position.z=camDist*Math.sin(camPhi)*Math.cos(camTheta);
+  cam.lookAt(0,0,0);
+  const norm=Math.min(1,Math.max(0,(camDist-5)/60));
+  document.getElementById('dm').style.top=(norm*170)+'px';
+  document.getElementById('sd').textContent=camDist.toFixed(1);
+}
+
+// ============ CENTRAL CORE — "YOU" ============
+const coreGroup=new THREE.Group();scene.add(coreGroup);
+const coreGeo=new THREE.SphereGeometry(.55,64,64);
+const coreMat=new THREE.MeshBasicMaterial({color:0xffffff});
+const coreMesh=new THREE.Mesh(coreGeo,coreMat);coreGroup.add(coreMesh);
+
+[{s:1.2,o:.08,c:.95},{s:2.0,o:.04,c:.85},{s:3.5,o:.02,c:.8},{s:6,o:.01,c:.75}].forEach(g=>{
+  const geo=new THREE.SphereGeometry(g.s,32,32);
+  const mat=new THREE.MeshBasicMaterial({color:new THREE.Color(g.c,g.c,1),transparent:true,opacity:g.o,side:THREE.BackSide,depthWrite:false});
+  coreGroup.add(new THREE.Mesh(geo,mat));
+});
+
+const coreLight=new THREE.PointLight(0xeeeeff,3,60);scene.add(coreLight);
+scene.add(new THREE.AmbientLight(0x332244,.25));
+
+// ============ STARS + NEBULA (always visible) ============
+const sGeo=new THREE.BufferGeometry();const SC=3000,sP=new Float32Array(SC*3);
+for(let i=0;i<SC;i++){const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=80+Math.random()*400;sP[i*3]=r*Math.sin(ph)*Math.cos(th);sP[i*3+1]=r*Math.sin(ph)*Math.sin(th);sP[i*3+2]=r*Math.cos(ph)}
+sGeo.setAttribute('position',new THREE.BufferAttribute(sP,3));
+scene.add(new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xd4cee0,size:.1,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true})));
+
+const nebulae=[];
+[{n:1500,rMin:2,rMax:22,y:4,c:0xb48fd4,s:.03,o:.12},{n:1000,rMin:5,rMax:30,y:3,c:0x8b9fd4,s:.025,o:.08},{n:600,rMin:20,rMax:50,y:6,c:0xff8866,s:.02,o:.04}].forEach(cfg=>{
+  const g=new THREE.BufferGeometry();const p=new Float32Array(cfg.n*3);
+  for(let i=0;i<cfg.n;i++){const a=Math.random()*Math.PI*2,r=cfg.rMin+Math.random()*cfg.rMax;p[i*3]=Math.cos(a)*r;p[i*3+1]=(Math.random()-.5)*cfg.y;p[i*3+2]=Math.sin(a)*r}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({color:cfg.c,size:cfg.s,transparent:true,opacity:cfg.o,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
+  pts._rotSpeed=(Math.random()-.5)*.0006;
+  scene.add(pts);nebulae.push(pts);
+});
+
+// ============ RAYCASTING STATE ============
+const raycaster=new THREE.Raycaster();raycaster.params.Points={threshold:.5};
+const ptr=new THREE.Vector2(-10,-10);
+let hoverIdx=-1,activeV=null;
+const planets=[];
+const threads=[];
+
+// ============ GLOW TEXTURE ============
+function mkGlowTex(col,intensity){
+  const cv=document.createElement('canvas');cv.width=256;cv.height=256;const x=cv.getContext('2d');
+  const [r,g,b]=col;
+  const gd=x.createRadialGradient(128,128,0,128,128,128);
+  gd.addColorStop(0,`rgba(${Math.min(255,r*intensity)},${Math.min(255,g*intensity)},${Math.min(255,b*intensity)},0.9)`);
+  gd.addColorStop(.15,`rgba(${r},${g},${b},0.4)`);
+  gd.addColorStop(.4,`rgba(${r},${g},${b},0.1)`);
+  gd.addColorStop(.7,`rgba(${r},${g},${b},0.02)`);
+  gd.addColorStop(1,'transparent');
+  x.fillStyle=gd;x.fillRect(0,0,256,256);
+  return new THREE.CanvasTexture(cv);
+}
+
+// ============ BUILD SCENE FROM DATA ============
+function buildScene(){
+  D.forEach((d,i)=>{
+    const [r,g,b]=d.c.map(v=>v/255);
+    const grp=new THREE.Group();
+    const baseSize = 0.18 + d.zone * 0.04;
+    const geo=new THREE.SphereGeometry(baseSize,32,32);
+    const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(r,g,b),emissive:new THREE.Color(r,g,b),emissiveIntensity:1.2+d.zone*0.3,roughness:.3,metalness:.1});
+    const mesh=new THREE.Mesh(geo,mat);grp.add(mesh);
+
+    const spMat=new THREE.SpriteMaterial({map:mkGlowTex(d.c,1.6),transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false});
+    const sp=new THREE.Sprite(spMat);
+    const baseGlow = 2.5 + d.zone * 0.8;
+    sp.scale.set(baseGlow,baseGlow,1);grp.add(sp);
+
+    const hGeo=new THREE.RingGeometry(baseSize*1.6,baseSize*1.8,64);
+    const hMat=new THREE.MeshBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.15,side:THREE.DoubleSide,depthWrite:false});
+    const halo=new THREE.Mesh(hGeo,hMat);halo.rotation.x=Math.PI*.5;grp.add(halo);
+
+    const angle=(i/D.length)*Math.PI*2+i*.3;
+    const ecc=.5+Math.random()*.4;
+    d._angle=angle;d._ecc=ecc;d._speed=.03+Math.random()*.025;
+    d._tiltX=(Math.random()-.5)*.5;d._tiltZ=(Math.random()-.5)*.4;
+    d._grp=grp;d._mesh=mesh;d._sp=sp;d._halo=halo;
+    d._baseSize=baseSize;d._baseGlow=baseGlow;d._hoverAmt=0;
+
+    scene.add(grp);planets.push(mesh);
+
+    const pts=[];for(let j=0;j<=128;j++){const a=j/128*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*d.dist,0,Math.sin(a)*d.dist*ecc))}
+    const curve=new THREE.CatmullRomCurve3(pts,true);
+    const rGeo=new THREE.BufferGeometry().setFromPoints(curve.getPoints(256));
+    const rMat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.03+d.zone*.005});
+    const ring=new THREE.Line(rGeo,rMat);ring.rotation.x=d._tiltX;ring.rotation.z=d._tiltZ;
+    scene.add(ring);
+  });
+
+  document.getElementById('sv').textContent=D.length;
+
+  // Threads
+  D.forEach((d,i)=>{
+    const geo=new THREE.BufferGeometry();
+    const pos=new Float32Array(60*3);geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const [r,g,b]=d.c.map(v=>v/255);
+    const mat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.08+d.zone*.01});
+    const line=new THREE.Line(geo,mat);scene.add(line);
+    threads.push({line,geo,toIdx:i,offset:Math.random()*10,baseOp:.08+d.zone*.01});
+    if(i<D.length-1){
+      const geo2=new THREE.BufferGeometry();
+      const pos2=new Float32Array(30*3);geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
+      const mat2=new THREE.LineBasicMaterial({color:0xa89eb8,transparent:true,opacity:.02});
+      const line2=new THREE.Line(geo2,mat2);scene.add(line2);
+      threads.push({line:line2,geo:geo2,fromIdx:i,toIdx:i+1,offset:Math.random()*10,baseOp:.02});
+    }
+  });
+  document.getElementById('st').textContent=threads.length;
+}
+
+function updateThreads(t){
+  threads.forEach(th=>{
+    const segs=th.geo.attributes.position.array.length/3;
+    const from=th.fromIdx!==undefined?D[th.fromIdx]._grp.position.clone():new THREE.Vector3(0,0,0);
+    const to=D[th.toIdx]._grp.position.clone();
+    const mid=from.clone().add(to).multiplyScalar(.5);
+    const perp=new THREE.Vector3().crossVectors(to.clone().sub(from).normalize(),new THREE.Vector3(0,1,0)).multiplyScalar(1.2*Math.sin(t*.25+th.offset));
+    mid.add(perp);mid.y+=Math.cos(t*.2+th.offset)*.6;
+    const curve=new THREE.QuadraticBezierCurve3(from,mid,to);
+    const pts=curve.getPoints(segs-1);
+    const arr=th.geo.attributes.position.array;
+    pts.forEach((p,i)=>{arr[i*3]=p.x;arr[i*3+1]=p.y;arr[i*3+2]=p.z});
+    th.geo.attributes.position.needsUpdate=true;
+  });
+}
+
+// ============ TOOLTIP ============
+const tip=document.getElementById('tip');
+function updateTip(){
+  if(hoverIdx>=0&&activeV===null){
+    const d=D[hoverIdx];
+    document.getElementById('tt').textContent=d.mo+' '+d.y;
+    document.getElementById('tu').textContent=d.url;
+    document.getElementById('ttl').textContent=d.t;
+    document.getElementById('tw').textContent=d.w;
+    document.getElementById('td').textContent=ZONES[d.zone]+' · distance '+d.dist.toFixed(1);
+    const pos=D[hoverIdx]._grp.position.clone().project(cam);
+    let sx=(pos.x*.5+.5)*innerWidth,sy=(-pos.y*.5+.5)*innerHeight;
+    let tx=sx+30,ty=sy-28;
+    if(tx+330>innerWidth)tx=sx-340;if(ty<10)ty=10;if(ty+220>innerHeight)ty=innerHeight-230;
+    tip.style.left=tx+'px';tip.style.top=ty+'px';
+    tip.classList.add('vis');document.body.style.cursor='pointer';
+  }else{tip.classList.remove('vis');if(activeV===null&&!dragging)document.body.style.cursor='crosshair'}
+}
+
+// ============ MAIN LOOP ============
+let time=0;
+function loop(){
+  time+=.008;
+
+  // Orbit planets (safe if D is empty)
+  D.forEach((d,i)=>{
+    d._angle+=d._speed*.006;
+    const a=d._angle,r=d.dist,ecc=d._ecc;
+    let x=Math.cos(a)*r,z=Math.sin(a)*r*ecc,y=0;
+    const cx=Math.cos(d._tiltX),sx=Math.sin(d._tiltX),cz=Math.cos(d._tiltZ),sz=Math.sin(d._tiltZ);
+    const y1=y*cx-z*sx,z1=y*sx+z*cx,x1=x*cz-y1*sz,y2=x*sz+y1*cz;
+    d._grp.position.set(x1,y2+Math.sin(time*1.2+i)*.05,z1);
+
+    const targetHover=(hoverIdx===i)?1:0;
+    d._hoverAmt+=(targetHover-d._hoverAmt)*.07;
+    const h=d._hoverAmt;
+    const expand=1+h*1.8;
+    d._mesh.scale.setScalar(expand);
+    d._mesh.material.emissiveIntensity=(1.2+d.zone*.3)+h*2.0;
+    const glowScale=d._baseGlow*(1+h*2.5);
+    d._sp.scale.set(glowScale,glowScale,1);d._sp.material.opacity=.6+h*.5;
+    const haloScale=1+h*2;
+    d._halo.scale.set(haloScale,haloScale,haloScale);d._halo.material.opacity=.15+h*.4;
+    d._halo.rotation.x=Math.PI*.5+Math.sin(time+i)*.15;
+  });
+
+  const p=.9+.1*Math.sin(time*1.5);
+  coreMesh.scale.setScalar(p);
+  coreLight.intensity=2.5+Math.sin(time*1.2);
+  scene.children.forEach(c=>{if(c.isPoints&&c._rotSpeed)c.rotation.y+=c._rotSpeed});
+
+  if(D.length>0) updateThreads(time);
+  updateCam();
+
+  raycaster.setFromCamera(ptr,cam);
+  const hits=raycaster.intersectObjects(planets);
+  hoverIdx=-1;
+  threads.forEach(th=>{th.line.material.opacity=th.baseOp});
+  if(hits.length>0&&activeV===null){
+    const h=hits[0].object;
+    const idx=D.findIndex(d=>d._mesh===h);
+    if(idx>=0){hoverIdx=idx;threads.forEach(th=>{if(th.toIdx===idx||(th.fromIdx===idx)){th.line.material.opacity=.4}})}
+  }
+
+  updateTip();
+  R.render(scene,cam);
+  requestAnimationFrame(loop);
+}
+loop();
+
+// ============ CLICK → VERSE ============
+canvas.addEventListener('click',()=>{if(hoverIdx>=0&&activeV===null)enterV(hoverIdx)});
+
+function enterV(idx){
+  activeV=idx;tip.classList.remove('vis');
+  const ov=document.getElementById('po'),pc=document.getElementById('pc');
+  pc.width=innerWidth;pc.height=innerHeight;const px=pc.getContext('2d');ov.classList.add('on');
+  const [cr,cg,cb]=D[idx].c;
+  const sp=D[idx]._grp.position.clone().project(cam);
+  const ox=(sp.x*.5+.5)*innerWidth,oy=(-sp.y*.5+.5)*innerHeight;
+  let prog=0;const mR=Math.sqrt(innerWidth**2+innerHeight**2);
+  function anim(){
+    prog+=.022;px.clearRect(0,0,pc.width,pc.height);
+    for(let i=0;i<7;i++){const p=Math.max(0,prog-i*.035);if(p<=0)continue;const e=1-Math.pow(1-Math.min(p*1.3,1),3),r=e*mR;
+      px.strokeStyle=`rgba(${cr},${cg},${cb},${(1-e)*.1})`;px.lineWidth=1.5;px.beginPath();px.arc(ox,oy,r,0,Math.PI*2);px.stroke()}
+    const fp=Math.min(prog*2,1),fg=px.createRadialGradient(ox,oy,0,ox,oy,fp*mR*1.2);
+    fg.addColorStop(0,`rgba(${cr},${cg},${cb},${(1-fp)*.12})`);fg.addColorStop(.3,`rgba(3,2,6,${fp*.96})`);fg.addColorStop(1,`rgba(3,2,6,${fp})`);
+    px.fillStyle=fg;px.fillRect(0,0,pc.width,pc.height);
+    if(prog<1)requestAnimationFrame(anim);
+    else setTimeout(()=>{showV(idx);let fo=1;function fd(){fo-=.04;px.clearRect(0,0,pc.width,pc.height);px.fillStyle=`rgba(3,2,6,${Math.max(fo,0)})`;px.fillRect(0,0,pc.width,pc.height);if(fo>0)requestAnimationFrame(fd);else ov.classList.remove('on')}fd()},120);
+  }
+  anim();
+}
+
+function showV(idx){
+  const d=D[idx],a=d.a;
+  document.querySelectorAll('.mc').forEach(e=>e.classList.add('h'));document.body.style.cursor='default';
+
+  // In public view, hide generate/pull buttons
+  const genBlock = isPublicView ? `<div class="vctr"><div class="gl">Viewing another multiverse</div></div>`
+    : (d.video
+      ?`<video class="verse-video" src="${d.video}" controls playsinline preload="metadata"></video>`
+      :`<div class="vctr">
+      <div class="gb" id="gb" onclick="genV(${idx})"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg></div>
+      <div class="gl" id="gl">Generate this verse</div></div>`);
+
+  const actionsBlock = isPublicView ? '' : `
+    <div class="acts rv" style="animation-delay:.55s">
+      <button class="ab" onclick="pullTL(${idx})"><span>Pull into this timeline</span><span class="ar">→</span></button>
+      <button class="ab rx"><span>Remix this verse</span><span class="ar">↻</span></button>
+      <button class="ab lg"><span>Let go</span><span class="ar">·</span></button></div>`;
+
+  document.getElementById('vvc').innerHTML=`
+    <div class="vo rv" style="animation-delay:0s">${a.l}</div>
+    <div class="vurl rv" style="animation-delay:.1s">${d.url}</div>
+    <h2 class="vtit rv" style="animation-delay:.2s">${a.t}</h2>
+    <div class="vsub rv" style="animation-delay:.35s">${a.s}</div>
+    <div class="va-w rv" style="animation-delay:.45s"><div class="vbg"></div>${genBlock}<div class="scn"></div></div>
+    <div class="ga" id="ga"><div class="ga-l">Verse generated — an alternate life</div><div class="ga-n" id="gn"></div></div>
+    ${actionsBlock}
+    <div class="cv rv" style="animation-delay:.65s"><div class="cv-l">Convergence · ${ZONES[d.zone]}</div><div class="cv-t">${a.cv}</div></div>`;
+  document.getElementById('vv').classList.add('on');document.getElementById('vb').classList.add('vis');
+}
+
+function exitV(){const vid=document.querySelector('.verse-video');if(vid)vid.pause();document.getElementById('vv').classList.remove('on');document.getElementById('vb').classList.remove('vis');document.querySelectorAll('.mc').forEach(e=>e.classList.remove('h'));document.body.style.cursor='crosshair';activeV=null}
+
+async function genV(idx){
+  const btn=document.getElementById('gb'),lbl=document.getElementById('gl'),area=document.getElementById('ga'),nar=document.getElementById('gn');
+  btn.classList.add('ld');lbl.textContent='Entering alternate timeline...';
+  try{
+    const res=await fetch(`${API}/api/verses/generate`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},body:JSON.stringify({prompt:D[idx].a.p,max_tokens:1000})});
+    const data=await res.json();const text=data.content.map(c=>c.text||'').join('');
+    const sents=text.match(/[^.!?]+[.!?]+/g)||[text];
+    nar.innerHTML=sents.map((s,i)=>`<span class="sn" style="animation-delay:${i*.35}s">${s.trim()} </span>`).join('');
+    btn.classList.remove('ld');lbl.textContent='Verse complete';area.classList.add('vis');
+    setTimeout(()=>{nar.querySelectorAll('.sn').forEach((el,i)=>{setTimeout(()=>el.classList.add('vis'),i*350)})},100);
+  }catch(e){btn.classList.remove('ld');lbl.textContent='Could not reach this timeline'}
+}
+
+async function pullTL(idx){
+  const area=document.getElementById('ga'),nar=document.getElementById('gn');area.classList.add('vis');
+  nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Mapping path into this timeline...</span>';const d=D[idx];
+  const prompt=`Someone explored an alternate life based on: "${d.t}" (${d.w}). Verse: "${d.a.t}" — ${d.a.s}. This life is in the "${ZONES[d.zone]}" zone — ${d.zone>=3?'radically different from their current life':'a plausible nearby life'}. Write 5 concrete, specific, poetic-but-actionable steps for THIS WEEK. Be specific. Warm, direct, urgent — advice from a future self. Return ONLY 5 numbered steps.`;
+  try{
+    const res=await fetch(`${API}/api/verses/generate`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},body:JSON.stringify({prompt,max_tokens:1000})});
+    const data=await res.json();const text=data.content.map(c=>c.text||'').join('');
+    const steps=text.split(/\d+[\.\)]\s*/).filter(Boolean);
+    nar.innerHTML=`<div class="ga-l" style="color:var(--warm);margin-bottom:16px">PULL INTO THIS TIMELINE — THIS WEEK</div>`+steps.map((s,i)=>`<span class="sn" style="animation-delay:${i*.4}s;display:block;margin-bottom:14px;padding-left:16px;border-left:1px solid var(--s600)">${s.trim()}</span>`).join('');
+    setTimeout(()=>{nar.querySelectorAll('.sn').forEach((el,i)=>{setTimeout(()=>el.classList.add('vis'),i*400)})},100);
+  }catch(e){nar.innerHTML='<span class="sn vis" style="color:var(--rose)">This path is temporarily unreachable.</span>'}
+}
+
+// ============ LOAD DATA FROM API ============
+async function loadVerses(){
+  let url, headers = {};
+  if(isPublicView){
+    url = `${API}/api/verses?user_id=${encodeURIComponent(viewUserId)}`;
+  } else {
+    if(!token){ window.location.href='/'; return; }
+    url = `${API}/api/verses`;
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  try{
+    const res = await fetch(url, {headers});
+    if(!res.ok){
+      if(!isPublicView && res.status === 401) window.location.href='/';
+      return;
+    }
+    const data = await res.json();
+    D = data.verses || [];
+    if(D.length > 0) buildScene();
+    else if(!isPublicView) { window.location.href = '/onboard'; return; }
+  }catch(e){
+    console.error('Failed to load verses:', e);
+  }
+}
+loadVerses();
+</script>
+</body>
+</html>

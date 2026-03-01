@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Begin Your Journey — Everything Everywhere All at Once</title>
+<link rel="stylesheet" href="/shared.css">
+<link rel="stylesheet" href="/onboard.css">
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="vig"></div>
+
+<div class="wrap">
+  <div class="title">Everything Everywhere All at Once</div>
+  <h1>Prepare to <em>cross over</em></h1>
+  <p class="sub">Three steps to map the lives you almost lived.</p>
+
+  <div class="steps">
+    <!-- Step 1: Install & Sync -->
+    <div class="step active" id="step1">
+      <div class="step-num">Step 01 <span class="check">&#10003;</span></div>
+      <div class="step-title">Install & Sync</div>
+      <div class="step-desc">Install the browser extension and click "Send All Cookies" to connect your accounts.</div>
+      <div class="step-status" id="s1-status">Waiting for cookie sync...</div>
+      <button class="btn btn-primary" id="s1-btn" onclick="completeStep1()">I've synced my cookies</button>
+    </div>
+
+    <!-- Step 2: Collect Your Data -->
+    <div class="step locked" id="step2">
+      <div class="step-num">Step 02 <span class="check">&#10003;</span></div>
+      <div class="step-title">Collect Your Data</div>
+      <div class="step-desc">We'll scan your connected services to find the threads of your alternate lives.</div>
+      <div class="step-status" id="s2-status"></div>
+      <div class="services" id="s2-services"></div>
+      <button class="btn btn-primary" id="s2-btn" onclick="collectGoogle()">Scan my Google</button>
+    </div>
+
+    <!-- Step 3: Enter Your Multiverse -->
+    <div class="step locked" id="step3">
+      <div class="step-num">Step 03 <span class="check">&#10003;</span></div>
+      <div class="step-title">Enter Your Multiverse</div>
+      <div class="step-desc">Your alternate lives are being mapped across the multiverse.</div>
+      <div class="step-status" id="s3-status"></div>
+      <div class="paths-count" id="s3-paths" style="display:none"></div>
+      <a class="btn btn-warm" id="s3-btn" href="/map" style="display:none;text-decoration:none">Enter your multiverse &rarr;</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="/map">Skip to map &rarr;</a>
+  </div>
+</div>
+
+<script src="/particles.js"></script>
+<script src="/onboard.js"></script>
+</body>
+</html>
