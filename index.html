@@ -1,453 +1,1975 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verse Walker</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
-  :root{--void:#030206;--s100:#f0ecf5;--s200:#d4cee0;--s300:#a89eb8;--s400:#7a6f90;--s500:#4d4460;--s600:#2e2840;--warm:#d4a574;--cool:#8b9fd4;--violet:#b48fd4;--vd:#8a6aad;--rose:#c47a8a}
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--void);color:var(--s100);font-family:'Playfair Display',serif;overflow:hidden;height:100vh;width:100vw;cursor:crosshair}
-  #c{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1}
-  .vig{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;background:radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(3,2,6,.45)70%,rgba(3,2,6,.85)100%)}
-  .grain{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-  .ui{position:fixed;z-index:10;pointer-events:none}
-  .hd{top:34px;left:42px;opacity:0;animation:fd 1.6s ease .4s forwards}
-  .hd h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:11px;letter-spacing:8px;text-transform:uppercase;color:var(--s400)}
-  .hd .sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s500);margin-top:5px}
-  .fl{bottom:28px;left:42px;opacity:0;animation:fu 1.6s ease 1s forwards}
-  .fl span{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s500)}.fl em{color:var(--s300);font-style:normal}
-  .fr{bottom:28px;right:42px;text-align:right;opacity:0;animation:fu 1.6s ease 1.4s forwards}
-  .fr p{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--s600);line-height:2;text-transform:uppercase}
-  .mc{transition:opacity .7s}.mc.h{opacity:0}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verse Walker</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap");
+      :root {
+        --void: #030206;
+        --s100: #f0ecf5;
+        --s200: #d4cee0;
+        --s300: #a89eb8;
+        --s400: #7a6f90;
+        --s500: #4d4460;
+        --s600: #2e2840;
+        --warm: #d4a574;
+        --cool: #8b9fd4;
+        --violet: #b48fd4;
+        --vd: #8a6aad;
+        --rose: #c47a8a;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--void);
+        color: var(--s100);
+        font-family: "Playfair Display", serif;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        cursor: crosshair;
+      }
+      #c {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+      .vig {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 3;
+        background: radial-gradient(
+          ellipse at 50% 50%,
+          transparent 35%,
+          rgba(3, 2, 6, 0.45) 70%,
+          rgba(3, 2, 6, 0.85) 100%
+        );
+      }
+      .grain {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 4;
+        opacity: 0.02;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+      .ui {
+        position: fixed;
+        z-index: 10;
+        pointer-events: none;
+      }
+      .hd {
+        top: 34px;
+        left: 42px;
+        opacity: 0;
+        animation: fd 1.6s ease 0.4s forwards;
+      }
+      .hd h1 {
+        font-family: "Instrument Serif", serif;
+        font-weight: 400;
+        font-size: 11px;
+        letter-spacing: 8px;
+        text-transform: uppercase;
+        color: var(--s400);
+      }
+      .hd .sub {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        color: var(--s500);
+        margin-top: 5px;
+      }
+      .fl {
+        bottom: 28px;
+        left: 42px;
+        opacity: 0;
+        animation: fu 1.6s ease 1s forwards;
+      }
+      .fl span {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        color: var(--s500);
+      }
+      .fl em {
+        color: var(--s300);
+        font-style: normal;
+      }
+      .fr {
+        bottom: 28px;
+        right: 42px;
+        text-align: right;
+        opacity: 0;
+        animation: fu 1.6s ease 1.4s forwards;
+      }
+      .fr p {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        color: var(--s600);
+        line-height: 2;
+        text-transform: uppercase;
+      }
+      .mc {
+        transition: opacity 0.7s;
+      }
+      .mc.h {
+        opacity: 0;
+      }
 
-  /* Distance indicator */
-  .dist-ind{position:fixed;top:50%;right:42px;transform:translateY(-50%);z-index:10;pointer-events:none;opacity:0;animation:fu 2s ease 2s forwards}
-  .dist-bar{width:2px;height:180px;background:linear-gradient(to bottom,var(--s100),var(--violet),var(--rose),rgba(255,100,80,.8));border-radius:2px;position:relative;opacity:.25}
-  .dist-marker{position:absolute;left:-4px;width:10px;height:2px;background:var(--s100);border-radius:1px;transition:top .5s cubic-bezier(.16,1,.3,1)}
-  .dist-labels{position:absolute;left:14px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between}
-  .dist-labels span{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--s600);white-space:nowrap}
+      /* Distance indicator */
+      .dist-ind {
+        position: fixed;
+        top: 50%;
+        right: 42px;
+        transform: translateY(-50%);
+        z-index: 10;
+        pointer-events: none;
+        opacity: 0;
+        animation: fu 2s ease 2s forwards;
+      }
+      .dist-bar {
+        width: 2px;
+        height: 180px;
+        background: linear-gradient(
+          to bottom,
+          var(--s100),
+          var(--violet),
+          var(--rose),
+          rgba(255, 100, 80, 0.8)
+        );
+        border-radius: 2px;
+        position: relative;
+        opacity: 0.25;
+      }
+      .dist-marker {
+        position: absolute;
+        left: -4px;
+        width: 10px;
+        height: 2px;
+        background: var(--s100);
+        border-radius: 1px;
+        transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .dist-labels {
+        position: absolute;
+        left: 14px;
+        top: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .dist-labels span {
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--s600);
+        white-space: nowrap;
+      }
 
-  #tip{position:fixed;z-index:50;pointer-events:none;opacity:0;transition:opacity .3s;max-width:320px}
-  #tip.vis{opacity:1}
-  .tp{background:rgba(6,4,12,.94);border:1px solid rgba(200,190,225,.08);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-radius:6px;padding:18px 22px;box-shadow:0 24px 70px rgba(0,0,0,.7),0 0 1px rgba(200,190,225,.15)}
-  .tp-t{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--violet);text-transform:uppercase;margin-bottom:7px}
-  .tp-u{font-family:'DM Mono',monospace;font-size:8px;color:var(--cool);opacity:.45;margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
-  .tp-tl{font-family:'Playfair Display',serif;font-size:15px;line-height:1.4;color:var(--s100);margin-bottom:7px}
-  .tp-w{font-family:'Instrument Serif',serif;font-style:italic;font-size:13px;line-height:1.45;color:var(--warm);opacity:.75}
-  .tp-d{margin-top:10px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1.5px;color:var(--s600);text-transform:uppercase}
-  .tp-c{margin-top:8px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--s500)}.tp-c span{color:var(--s300)}
+      #tip {
+        position: fixed;
+        z-index: 50;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+        max-width: 320px;
+      }
+      #tip.vis {
+        opacity: 1;
+      }
+      .tp {
+        background: rgba(6, 4, 12, 0.94);
+        border: 1px solid rgba(200, 190, 225, 0.08);
+        backdrop-filter: blur(28px);
+        -webkit-backdrop-filter: blur(28px);
+        border-radius: 6px;
+        padding: 18px 22px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7),
+          0 0 1px rgba(200, 190, 225, 0.15);
+      }
+      .tp-t {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 3px;
+        color: var(--violet);
+        text-transform: uppercase;
+        margin-bottom: 7px;
+      }
+      .tp-u {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        color: var(--cool);
+        opacity: 0.45;
+        margin-bottom: 9px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 280px;
+      }
+      .tp-tl {
+        font-family: "Playfair Display", serif;
+        font-size: 15px;
+        line-height: 1.4;
+        color: var(--s100);
+        margin-bottom: 7px;
+      }
+      .tp-w {
+        font-family: "Instrument Serif", serif;
+        font-style: italic;
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--warm);
+        opacity: 0.75;
+      }
+      .tp-d {
+        margin-top: 10px;
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 1.5px;
+        color: var(--s600);
+        text-transform: uppercase;
+      }
+      .tp-c {
+        margin-top: 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--s500);
+      }
+      .tp-c span {
+        color: var(--s300);
+      }
 
-  #po{position:fixed;top:0;left:0;width:100%;height:100%;z-index:60;pointer-events:none;opacity:0}#po.on{opacity:1;pointer-events:all}#po canvas{width:100%;height:100%}
+      #po {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 60;
+        pointer-events: none;
+        opacity: 0;
+      }
+      #po.on {
+        opacity: 1;
+        pointer-events: all;
+      }
+      #po canvas {
+        width: 100%;
+        height: 100%;
+      }
 
-  #vv{position:fixed;top:0;left:0;width:100%;height:100%;z-index:50;opacity:0;pointer-events:none;overflow-y:auto;overflow-x:hidden;background:var(--void);transition:opacity .5s}
-  #vv.on{opacity:1;pointer-events:all}#vv::-webkit-scrollbar{width:3px}#vv::-webkit-scrollbar-thumb{background:var(--s600);border-radius:2px}#vv::-webkit-scrollbar-track{background:transparent}
-  .vb{position:fixed;top:30px;left:38px;z-index:55;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--s500);cursor:pointer;padding:8px 14px;border:1px solid rgba(200,190,225,.07);border-radius:3px;background:rgba(6,4,12,.85);backdrop-filter:blur(12px);transition:all .3s;display:none}.vb:hover{color:var(--s200);border-color:var(--s400)}.vb.vis{display:block}
-  .vc{max-width:620px;margin:0 auto;padding:110px 36px 100px}
-  .vo{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--violet);margin-bottom:7px;opacity:0;transform:translateY(14px)}
-  .vurl{font-family:'DM Mono',monospace;font-size:9px;color:var(--cool);opacity:0;margin-bottom:30px;transform:translateY(14px)}
-  .vtit{font-family:'Instrument Serif',serif;font-weight:400;font-size:42px;line-height:1.18;color:var(--s100);margin-bottom:10px;opacity:0;transform:translateY(22px)}
-  .vsub{font-family:'Playfair Display',serif;font-style:italic;font-weight:300;font-size:18px;color:var(--warm);opacity:0;margin-bottom:48px;transform:translateY(16px)}
-  .rv{animation:ru .9s ease forwards}
-  .va-w{width:100%;aspect-ratio:16/9;border-radius:6px;position:relative;overflow:hidden;margin-bottom:48px;border:1px solid rgba(200,190,225,.05);opacity:0;transform:translateY(18px)}.va-w.rv{animation:ru 1s ease forwards}
-  .vbg{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(155deg,#0d0b15,#080611)}.vbg::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(180,143,212,.055) 0%,transparent 55%),radial-gradient(ellipse at 70% 60%,rgba(139,159,212,.04) 0%,transparent 55%)}
-  .vctr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:13px}
-  .gb{width:62px;height:62px;border-radius:50%;border:1.5px solid var(--s500);background:rgba(200,190,225,.025);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .5s cubic-bezier(.16,1,.3,1)}
-  .gb:hover{border-color:var(--warm);box-shadow:0 0 45px rgba(212,165,116,.12);transform:scale(1.08)}.gb:hover svg{fill:var(--warm)}
-  .gb svg{width:17px;height:17px;fill:var(--s300);margin-left:3px;transition:fill .3s}
-  .gb.ld{border-color:var(--violet);animation:pu 2s ease infinite;pointer-events:none}.gb.ld svg{display:none}.gb.ld::after{content:'';width:17px;height:17px;border:1.5px solid transparent;border-top-color:var(--violet);border-radius:50%;animation:sp .8s linear infinite}
-  .gl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--s500)}
-  .scn{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:.012;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(200,190,225,.08) 2px,rgba(200,190,225,.08) 4px)}
-  .ga{margin-bottom:48px;display:none}.ga.vis{display:block}
-  .ga-l{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--vd);margin-bottom:18px}
-  .ga-n{font-family:'Playfair Display',serif;font-weight:300;font-size:18px;line-height:1.85;color:var(--s200)}
-  .ga-n .sn{opacity:0;display:inline}.ga-n .sn.vis{animation:sf .8s ease forwards}
-  .acts{display:flex;flex-direction:column;gap:1px;margin-bottom:48px;border-radius:5px;overflow:hidden;opacity:0;transform:translateY(14px)}.acts.rv{animation:ru .8s ease forwards}
-  .ab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:15px 18px;background:rgba(200,190,225,.018);color:var(--s400);cursor:pointer;transition:all .35s;display:flex;justify-content:space-between;align-items:center;border:none;width:100%;text-align:left}
-  .ab:hover{background:rgba(212,165,116,.04);color:var(--s100)}.ab .ar{opacity:0;transform:translateX(-8px);transition:all .35s;color:var(--warm)}.ab:hover .ar{opacity:1;transform:translateX(0)}
-  .ab.rx:hover{background:rgba(139,159,212,.04)}.ab.rx:hover .ar{color:var(--cool)}.ab.lg:hover{background:rgba(196,122,138,.035)}.ab.lg:hover .ar{color:var(--rose)}
-  .cv{padding-top:38px;border-top:1px solid rgba(200,190,225,.045);margin-bottom:80px;opacity:0;transform:translateY(14px)}.cv.rv{animation:ru .8s ease forwards}
-  .cv-l{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:4px;text-transform:uppercase;color:var(--violet);margin-bottom:14px}
-  .cv-t{font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;line-height:1.55;color:var(--warm);opacity:.75}
-  @keyframes fd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes ru{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes sf{from{opacity:0}to{opacity:1}}
-  @keyframes pu{0%,100%{box-shadow:0 0 0 0 rgba(180,143,212,.2)}50%{box-shadow:0 0 0 16px rgba(180,143,212,0)}}
-  @keyframes sp{to{transform:rotate(360deg)}}
-</style>
-</head>
-<body>
-<canvas id="c"></canvas>
-<div class="vig"></div>
-<div class="grain"></div>
+      #vv {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 50;
+        opacity: 0;
+        pointer-events: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: var(--void);
+        transition: opacity 0.5s;
+      }
+      #vv.on {
+        opacity: 1;
+        pointer-events: all;
+      }
+      #vv::-webkit-scrollbar {
+        width: 3px;
+      }
+      #vv::-webkit-scrollbar-thumb {
+        background: var(--s600);
+        border-radius: 2px;
+      }
+      #vv::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .vb {
+        position: fixed;
+        top: 30px;
+        left: 38px;
+        z-index: 55;
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--s500);
+        cursor: pointer;
+        padding: 8px 14px;
+        border: 1px solid rgba(200, 190, 225, 0.07);
+        border-radius: 3px;
+        background: rgba(6, 4, 12, 0.85);
+        backdrop-filter: blur(12px);
+        transition: all 0.3s;
+        display: none;
+      }
+      .vb:hover {
+        color: var(--s200);
+        border-color: var(--s400);
+      }
+      .vb.vis {
+        display: block;
+      }
+      .vc {
+        max-width: 620px;
+        margin: 0 auto;
+        padding: 110px 36px 100px;
+      }
+      .vo {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--violet);
+        margin-bottom: 7px;
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      .vurl {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--cool);
+        opacity: 0;
+        margin-bottom: 30px;
+        transform: translateY(14px);
+      }
+      .vtit {
+        font-family: "Instrument Serif", serif;
+        font-weight: 400;
+        font-size: 42px;
+        line-height: 1.18;
+        color: var(--s100);
+        margin-bottom: 10px;
+        opacity: 0;
+        transform: translateY(22px);
+      }
+      .vsub {
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-weight: 300;
+        font-size: 18px;
+        color: var(--warm);
+        opacity: 0;
+        margin-bottom: 48px;
+        transform: translateY(16px);
+      }
+      .rv {
+        animation: ru 0.9s ease forwards;
+      }
+      .va-w {
+        width: 100%;
+        aspect-ratio: 16/9;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 48px;
+        border: 1px solid rgba(200, 190, 225, 0.05);
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      .va-w.rv {
+        animation: ru 1s ease forwards;
+      }
+      .vbg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(155deg, #0d0b15, #080611);
+      }
+      .vbg::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            ellipse at 30% 40%,
+            rgba(180, 143, 212, 0.055) 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse at 70% 60%,
+            rgba(139, 159, 212, 0.04) 0%,
+            transparent 55%
+          );
+      }
+      .vctr {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 13px;
+      }
+      .gb {
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        border: 1.5px solid var(--s500);
+        background: rgba(200, 190, 225, 0.025);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .gb:hover {
+        border-color: var(--warm);
+        box-shadow: 0 0 45px rgba(212, 165, 116, 0.12);
+        transform: scale(1.08);
+      }
+      .gb:hover svg {
+        fill: var(--warm);
+      }
+      .gb svg {
+        width: 17px;
+        height: 17px;
+        fill: var(--s300);
+        margin-left: 3px;
+        transition: fill 0.3s;
+      }
+      .gb.ld {
+        border-color: var(--violet);
+        animation: pu 2s ease infinite;
+        pointer-events: none;
+      }
+      .gb.ld svg {
+        display: none;
+      }
+      .gb.ld::after {
+        content: "";
+        width: 17px;
+        height: 17px;
+        border: 1.5px solid transparent;
+        border-top-color: var(--violet);
+        border-radius: 50%;
+        animation: sp 0.8s linear infinite;
+      }
+      .gl {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: var(--s500);
+      }
+      .scn {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        opacity: 0.012;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(200, 190, 225, 0.08) 2px,
+          rgba(200, 190, 225, 0.08) 4px
+        );
+      }
+      .ga {
+        margin-bottom: 48px;
+        display: none;
+      }
+      .ga.vis {
+        display: block;
+      }
+      .ga-l {
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--vd);
+        margin-bottom: 18px;
+      }
+      .ga-n {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: 18px;
+        line-height: 1.85;
+        color: var(--s200);
+      }
+      .ga-n .sn {
+        opacity: 0;
+        display: inline;
+      }
+      .ga-n .sn.vis {
+        animation: sf 0.8s ease forwards;
+      }
+      .acts {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        margin-bottom: 48px;
+        border-radius: 5px;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      .acts.rv {
+        animation: ru 0.8s ease forwards;
+      }
+      .ab {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 15px 18px;
+        background: rgba(200, 190, 225, 0.018);
+        color: var(--s400);
+        cursor: pointer;
+        transition: all 0.35s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: none;
+        width: 100%;
+        text-align: left;
+      }
+      .ab:hover {
+        background: rgba(212, 165, 116, 0.04);
+        color: var(--s100);
+      }
+      .ab .ar {
+        opacity: 0;
+        transform: translateX(-8px);
+        transition: all 0.35s;
+        color: var(--warm);
+      }
+      .ab:hover .ar {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .ab.rx:hover {
+        background: rgba(139, 159, 212, 0.04);
+      }
+      .ab.rx:hover .ar {
+        color: var(--cool);
+      }
+      .ab.lg:hover {
+        background: rgba(196, 122, 138, 0.035);
+      }
+      .ab.lg:hover .ar {
+        color: var(--rose);
+      }
+      .cv {
+        padding-top: 38px;
+        border-top: 1px solid rgba(200, 190, 225, 0.045);
+        margin-bottom: 80px;
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      .cv.rv {
+        animation: ru 0.8s ease forwards;
+      }
+      .cv-l {
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--violet);
+        margin-bottom: 14px;
+      }
+      .cv-t {
+        font-family: "Instrument Serif", serif;
+        font-style: italic;
+        font-size: 20px;
+        line-height: 1.55;
+        color: var(--warm);
+        opacity: 0.75;
+      }
+      @keyframes fd {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fu {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes ru {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes sf {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes pu {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(180, 143, 212, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 0 16px rgba(180, 143, 212, 0);
+        }
+      }
+      @keyframes sp {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-<div class="ui hd mc"><h1>Everything Everywhere All at Once</h1><div class="sub">The white center is you. The further out you go, the stranger the life.</div></div>
-<div class="ui fl mc"><span><em id="st">0</em> threads · <em id="sv">0</em> verses · distance: <em id="sd">0</em></span></div>
-<div class="ui fr mc"><p>Drag to orbit · Scroll to zoom</p><p>Explore outward — it never ends</p></div>
+      /* ── Config panel ── */
+      #cfg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(3, 2, 6, 0.92);
+        backdrop-filter: blur(20px);
+      }
+      #cfg.gone {
+        display: none;
+      }
+      .cfg-box {
+        background: rgba(10, 8, 20, 0.95);
+        border: 1px solid rgba(200, 190, 225, 0.1);
+        border-radius: 8px;
+        padding: 42px 48px;
+        max-width: 420px;
+        width: 100%;
+        margin: 16px;
+      }
+      .cfg-title {
+        font-family: "Instrument Serif", serif;
+        font-size: 22px;
+        color: var(--s100);
+        margin-bottom: 8px;
+      }
+      .cfg-sub {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 2px;
+        color: var(--s500);
+        text-transform: uppercase;
+        margin-bottom: 32px;
+      }
+      .cfg-label {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--s400);
+        margin-bottom: 8px;
+      }
+      .cfg-inp {
+        width: 100%;
+        background: rgba(200, 190, 225, 0.04);
+        border: 1px solid rgba(200, 190, 225, 0.1);
+        border-radius: 4px;
+        padding: 11px 14px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--s100);
+        outline: none;
+        margin-bottom: 24px;
+        transition: border-color 0.3s;
+      }
+      .cfg-inp:focus {
+        border-color: var(--violet);
+      }
+      .cfg-btn {
+        width: 100%;
+        padding: 13px;
+        background: rgba(180, 143, 212, 0.08);
+        border: 1px solid rgba(180, 143, 212, 0.2);
+        border-radius: 4px;
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--violet);
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .cfg-btn:hover {
+        background: rgba(180, 143, 212, 0.14);
+        border-color: var(--violet);
+      }
 
-<div class="dist-ind mc">
-  <div class="dist-bar"><div class="dist-marker" id="dm"></div></div>
-  <div class="dist-labels">
-    <span>You now</span>
-    <span>Adjacent</span>
-    <span>Divergent</span>
-    <span>Unrecognizable</span>
-  </div>
-</div>
+      /* ── Gear icon ── */
+      #gear {
+        position: fixed;
+        top: 32px;
+        right: 96px;
+        z-index: 15;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0.3;
+        transition: opacity 0.3s;
+        background: none;
+        border: none;
+        padding: 0;
+      }
+      #gear:hover {
+        opacity: 0.8;
+      }
+      #gear svg {
+        width: 14px;
+        height: 14px;
+        fill: var(--s300);
+      }
 
-<div id="tip"><div class="tp">
-  <div class="tp-t" id="tt"></div><div class="tp-u" id="tu"></div>
-  <div class="tp-tl" id="ttl"></div><div class="tp-w" id="tw"></div>
-  <div class="tp-d" id="td"></div>
-  <div class="tp-c"><span>Click</span> to enter this verse</div>
-</div></div>
+      /* ── Scan button ── */
+      #scan-btn {
+        position: fixed;
+        bottom: 68px;
+        left: 42px;
+        z-index: 15;
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--violet);
+        cursor: pointer;
+        padding: 9px 16px;
+        border: 1px solid rgba(180, 143, 212, 0.2);
+        border-radius: 3px;
+        background: rgba(6, 4, 12, 0.85);
+        backdrop-filter: blur(12px);
+        transition: all 0.4s;
+        display: none;
+        opacity: 0;
+      }
+      #scan-btn.vis {
+        display: block;
+        animation: fu 1s ease 0.5s forwards;
+      }
+      #scan-btn:hover {
+        border-color: var(--violet);
+        background: rgba(180, 143, 212, 0.06);
+      }
+      #scan-btn.act {
+        color: var(--s500);
+        pointer-events: none;
+        border-color: rgba(180, 143, 212, 0.08);
+      }
 
-<div id="po"><canvas id="pc"></canvas></div>
-<div id="vv">
-  <button class="vb" id="vb" onclick="exitV()">← Return to map</button>
-  <div class="vc" id="vvc"></div>
-</div>
+      /* ── Scan overlay ── */
+      #scan-ov {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 80;
+        background: rgba(3, 2, 6, 0.88);
+        backdrop-filter: blur(24px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+      #scan-ov.on {
+        display: flex;
+      }
+      .scan-box {
+        max-width: 460px;
+        width: 100%;
+        padding: 0 36px;
+      }
+      .scan-title {
+        font-family: "Instrument Serif", serif;
+        font-size: 26px;
+        color: var(--s100);
+        margin-bottom: 36px;
+      }
+      .scan-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .scan-icon {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--s500);
+        width: 44px;
+        flex-shrink: 0;
+      }
+      .scan-bar {
+        flex: 1;
+        height: 1px;
+        background: rgba(200, 190, 225, 0.06);
+        position: relative;
+        overflow: hidden;
+      }
+      .scan-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--violet), var(--cool));
+        width: 0%;
+        transition: width 1s;
+      }
+      .scan-fill.run {
+        width: 60%;
+        animation: pulse-fill 2s ease infinite;
+      }
+      .scan-fill.done {
+        width: 100%;
+        background: linear-gradient(90deg, var(--vd), var(--violet));
+        animation: none;
+      }
+      .scan-status {
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 1.5px;
+        color: var(--s500);
+        width: 70px;
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .scan-link {
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 1px;
+        color: var(--cool);
+        opacity: 0.55;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+      .scan-link:hover {
+        opacity: 1;
+      }
+      .scan-final {
+        margin-top: 32px;
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--s500);
+        opacity: 0;
+        transition: opacity 0.8s;
+      }
+      .scan-final.vis {
+        opacity: 1;
+      }
+      @keyframes pulse-fill {
+        0%,
+        100% {
+          opacity: 0.35;
+        }
+        50% {
+          opacity: 0.9;
+        }
+      }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-// ============ DATA — ordered by distance (close = realistic, far = wild) ============
-const ZONES = ['Close — a version of you that almost happened','Adjacent — a familiar life, tilted','Divergent — you might not recognize yourself','Far reach — barely you anymore','Outer rim — a stranger with your eyes'];
+      /* ── Live monitoring panel ── */
+      #live-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 360px;
+        height: 100%;
+        z-index: 90;
+        background: rgba(6, 4, 14, 0.96);
+        border-left: 1px solid rgba(200, 190, 225, 0.07);
+        transform: translateX(100%);
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        padding: 32px 26px;
+        overflow: hidden;
+      }
+      #live-panel.on {
+        transform: translateX(0);
+      }
+      .lp-hd {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--cool);
+        margin-bottom: 10px;
+      }
+      .lp-close {
+        position: absolute;
+        top: 28px;
+        right: 22px;
+        cursor: pointer;
+        opacity: 0.35;
+        transition: opacity 0.3s;
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--s300);
+        background: none;
+        border: none;
+      }
+      .lp-close:hover {
+        opacity: 1;
+      }
+      .lp-status {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        color: var(--s500);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .lp-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--violet);
+        animation: pu 2s ease infinite;
+        flex-shrink: 0;
+      }
+      .lp-dot.done {
+        background: var(--vd);
+        animation: none;
+      }
+      .lp-dot.err {
+        background: var(--rose);
+        animation: none;
+      }
+      .lp-live {
+        display: block;
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 1px;
+        color: var(--cool);
+        opacity: 0.55;
+        margin-bottom: 14px;
+        word-break: break-all;
+        text-decoration: none;
+      }
+      .lp-live:hover {
+        opacity: 1;
+      }
+      .lp-cost {
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 1.5px;
+        color: var(--s600);
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        min-height: 14px;
+      }
+      .lp-out {
+        flex: 1;
+        overflow-y: auto;
+        padding-top: 16px;
+        border-top: 1px solid rgba(200, 190, 225, 0.05);
+      }
+      .lp-out::-webkit-scrollbar {
+        width: 2px;
+      }
+      .lp-out::-webkit-scrollbar-thumb {
+        background: var(--s600);
+      }
+      .lp-out-l {
+        font-family: "DM Mono", monospace;
+        font-size: 7px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--vd);
+        margin-bottom: 14px;
+      }
+      .lp-out-t {
+        font-family: "Playfair Display", serif;
+        font-weight: 300;
+        font-size: 14px;
+        line-height: 1.8;
+        color: var(--s200);
+        white-space: pre-wrap;
+      }
+      .lp-stop {
+        margin-top: 16px;
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--rose);
+        cursor: pointer;
+        padding: 9px 14px;
+        border: 1px solid rgba(196, 122, 138, 0.15);
+        border-radius: 3px;
+        background: none;
+        transition: all 0.3s;
+        display: none;
+        width: 100%;
+      }
+      .lp-stop:hover {
+        background: rgba(196, 122, 138, 0.06);
+        border-color: var(--rose);
+      }
+      .lp-stop.vis {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div class="vig"></div>
+    <div class="grain"></div>
 
-const D = [
-  // ZONE 1: CLOSE (r ~ 4-6)
-  {y:"2022",mo:"Feb",url:"maps.google.com/dir/pacific-heights/half-moon-bay",t:"Directions to Half Moon Bay — checked 14 times",w:"You never went. You kept measuring the distance.",c:[60,200,255],zone:0,dist:4.5,
-   a:{l:"CLOSE VERSE — A SUNDAY DRIVE YOU NEVER TOOK",t:"The Ocean at the End of the Search",s:"Stillness isn't the opposite of action. It's the prerequisite.",cv:"Stillness isn't the opposite of action in your multiverse. It's the prerequisite.",p:"Write a deeply cinematic 150-word narrative about someone who finally drove to the ocean they kept googling. Highway 1, fog, music off. Brain stopped optimizing. Second person. Return ONLY prose. 6-8 sentences."}},
-  {y:"2019",mo:"Dec",url:"docs.google.com/d/untitled-letter-never-sent",t:"Untitled Google Doc — 4,200 words, never shared",w:"It started 'Dear —' and you never filled in the name.",c:[255,190,70],zone:0,dist:5.2,
-   a:{l:"CLOSE VERSE — THE LETTER THAT CHANGED THE SHAPE",t:"The Letter You Sent",s:"Your unsent messages outnumber sent 3:1.",cv:"Your unsent messages outnumber your sent ones 3:1. The ratio is the story.",p:"Write a deeply cinematic 150-word narrative about someone who sent the 4,200-word letter. Response came three days later — smaller, more honest than rehearsed. Second person. Return ONLY prose. 6-8 sentences."}},
-  // ZONE 2: ADJACENT (r ~ 8-11)
-  {y:"2018",mo:"Mar",url:"sfballet.org/season/swan-lake-tickets",t:"Two tickets to Swan Lake, never purchased",w:"You typed their name into the guest field and closed the tab.",c:[255,70,130],zone:1,dist:8.5,
-   a:{l:"ADJACENT VERSE — YOU SAID YES TO BEAUTY",t:"You Went to the Ballet",s:"A life that began with two tickets and a name you almost typed",cv:"Across 7 of your timelines, the turning point is the small decision you almost didn't make.",p:"Write a deeply cinematic 150-word narrative about an alternate life where someone bought ballet tickets and invited the person they feared to ask. Vulnerability cracked open. Sensory. Second person. Return ONLY prose. 6-8 sentences."}},
-  {y:"2020",mo:"Nov",url:"google.com/search?q=is+it+too+late+to+change+careers+at+27",t:"\"Is it too late to change careers at 27\"",w:"Searched at 2:47am. Also: 'careers that feel like play.'",c:[255,160,30],zone:1,dist:10,
-   a:{l:"ADJACENT VERSE — THE SEARCH WAS THE LAST ONE",t:"You Closed the Laptop and Made the Call",s:"The difference between timelines happens at 2:48am",cv:"The 2:47am searches appear in every timeline. The difference is what happens at 2:48.",p:"Write a deeply cinematic 150-word narrative about someone who stopped googling existential crisis at 2:47am and took action. Terrifying aliveness. Second person. Return ONLY prose. 6-8 sentences."}},
-  // ZONE 3: DIVERGENT (r ~ 14-18)
-  {y:"2019",mo:"Aug",url:"airbnb.com/rooms/lisbon-alfama-artist-studio",t:"Artist studio in Alfama — saved but never booked",w:"You bookmarked it three separate times over two years.",c:[50,120,255],zone:2,dist:15,
-   a:{l:"DIVERGENT VERSE — YOU LEFT EVERYTHING",t:"The Lisbon Summer",s:"Thirty days in a tile-walled studio with afternoon light",cv:"In every timeline where you leave, you find yourself without context.",p:"Write a deeply cinematic 150-word narrative about someone who booked the Lisbon artist studio for a month. Tiles, light, narrow streets. Wrote differently there. Second person. Return ONLY prose. 6-8 sentences."}},
-  {y:"2021",mo:"May",url:"dhamma.org/en/schedules/vipassana-10-day",t:"10-day silent retreat — application left open 3 weeks",w:"Everything filled except the emergency contact field.",c:[180,60,255],zone:2,dist:16.5,
-   a:{l:"DIVERGENT VERSE — YOU SAT WITH THE SILENCE",t:"Ten Days of Nothing",s:"You came home different. Not better. Softer.",cv:"The body keeps appearing. Every version of you is trying to come home to the same place.",p:"Write a deeply cinematic 150-word narrative about someone who completed a 10-day silent retreat. Day four broke them. Day seven, laughing at nothing. Second person. Return ONLY prose. 6-8 sentences."}},
-  // ZONE 4: FAR REACH (r ~ 22-28)
-  {y:"2017",mo:"Oct",url:"github.com/new — repo: 'dream-journal-ai'",t:"dream-journal-ai — 3 commits, then silence",w:"Last commit: 'this might actually be something.'",c:[30,230,140],zone:3,dist:24,
-   a:{l:"FAR REACH — YOU BECAME THE BUILDER",t:"The Thing You Almost Built",s:"It wasn't the app. It was learning you could finish.",cv:"In timelines where you finish things, the completion rewires your self-trust.",p:"Write a deeply cinematic 150-word narrative about someone who pushed past commit #3 and built something wild and strange that changed the trajectory of their career. Creation as identity. Second person. Return ONLY prose. 6-8 sentences."}},
-  {y:"2023",mo:"Jul",url:"letterboxd.com/list/films-about-people-who-disappear",t:"\"Films about people who disappear\" — 23 films",w:"You watched seven in one weekend.",c:[220,50,220],zone:3,dist:26,
-   a:{l:"FAR REACH — YOU UNDERSTOOD THE PATTERN",t:"What the Disappearing Was About",s:"You didn't want to vanish. You wanted to be found.",cv:"Every timeline has this: you stop performing absence and start risking presence.",p:"Write a deeply cinematic 150-word narrative about someone who realized their disappearing obsession was about wanting to be found. Psychological self-recognition. Second person. Return ONLY prose. 6-8 sentences."}},
-  // ZONE 5: OUTER RIM — procedurally implied (r ~ 35+)
-  {y:"2016",mo:"Jun",url:"craigslist.org/van-conversion-sprinter-diy",t:"DIY van conversion guide — 47 tabs open simultaneously",w:"You priced out solar panels at 3am on a Tuesday.",c:[255,80,40],zone:4,dist:38,
-   a:{l:"OUTER RIM — A STRANGER WITH YOUR EYES",t:"The Year You Lived in a Van",s:"No address. No Wi-Fi. No excuse not to become yourself.",cv:"In the most distant timelines, you have the least and feel the most.",p:"Write a deeply cinematic 150-word narrative about someone who sold everything and lived in a converted van for a year. Radical simplicity. They became someone unrecognizable to their former self — freer, wilder, more honest. Second person. Return ONLY prose. 6-8 sentences."}},
-  {y:"2015",mo:"Sep",url:"juilliard.edu/admissions/acting-mfa-application",t:"Juilliard MFA Acting — application PDF downloaded twice",w:"You never told anyone you downloaded it.",c:[255,40,90],zone:4,dist:45,
-   a:{l:"OUTER RIM — THE LIFE ON STAGE",t:"You Auditioned",s:"The version of you that chose art over certainty.",cv:"In the furthest timelines, the thing you're most afraid of is the thing that saves you.",p:"Write a deeply cinematic 150-word narrative about someone who secretly applied to Juilliard for acting, got in, and left their entire career behind. The terror and aliveness of choosing art. Second person. Return ONLY prose. 6-8 sentences."}}
-];
+    <div class="ui hd mc">
+      <h1>Everything Everywhere All at Once</h1>
+      <div class="sub">
+        The white center is you. The further out you go, the stranger the life.
+      </div>
+    </div>
+    <div class="ui fl mc">
+      <span
+        ><em id="st">0</em> threads · <em id="sv">0</em> verses · distance:
+        <em id="sd">0</em></span
+      >
+    </div>
+    <div class="ui fr mc">
+      <p>Drag to orbit · Scroll to zoom</p>
+      <p>Explore outward — it never ends</p>
+    </div>
 
-// ============ THREE SETUP ============
-const canvas=document.getElementById('c');
-const R=new THREE.WebGLRenderer({canvas,antialias:true});
-R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,2));
-R.setClearColor(0x030206);R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.4;
+    <div class="dist-ind mc">
+      <div class="dist-bar"><div class="dist-marker" id="dm"></div></div>
+      <div class="dist-labels">
+        <span>You now</span>
+        <span>Adjacent</span>
+        <span>Divergent</span>
+        <span>Unrecognizable</span>
+      </div>
+    </div>
 
-const scene=new THREE.Scene();
-scene.fog=new THREE.FogExp2(0x030206,0.004);
-const cam=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,4000);
-cam.position.set(0,8,20);
+    <div id="tip">
+      <div class="tp">
+        <div class="tp-t" id="tt"></div>
+        <div class="tp-u" id="tu"></div>
+        <div class="tp-tl" id="ttl"></div>
+        <div class="tp-w" id="tw"></div>
+        <div class="tp-d" id="td"></div>
+        <div class="tp-c"><span>Click</span> to enter this verse</div>
+      </div>
+    </div>
 
-addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
+    <div id="po"><canvas id="pc"></canvas></div>
+    <div id="vv">
+      <button class="vb" id="vb" onclick="exitV()">← Return to map</button>
+      <div class="vc" id="vvc"></div>
+    </div>
 
-// ============ CAMERA — infinite drag ============
-let camTheta=0,camPhi=Math.PI*.28,camDist=22,targetDist=22;
-let dragging=false,pmx=0,pmy=0,autoRot=true,autoTimer=null;
-let mx=0,my=0;
+    <!-- Config panel -->
+    <div id="cfg">
+      <div class="cfg-box">
+        <div class="cfg-title">Your Digital Life</div>
+        <div class="cfg-sub">Connect your browsing identity</div>
+        <div class="cfg-label">Browser Use Profile ID</div>
+        <input
+          class="cfg-inp"
+          id="cfg-pid"
+          type="text"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          spellcheck="false"
+          autocomplete="off"
+        />
+        <button class="cfg-btn" onclick="saveAndBegin()">Begin →</button>
+      </div>
+    </div>
 
-canvas.addEventListener('mousedown',e=>{if(activeV!==null)return;dragging=true;pmx=e.clientX;pmy=e.clientY;autoRot=false;clearTimeout(autoTimer)});
-addEventListener('mouseup',()=>{dragging=false;autoTimer=setTimeout(()=>autoRot=true,4000)});
-addEventListener('mousemove',e=>{
-  mx=e.clientX;my=e.clientY;
-  ptr.x=(e.clientX/innerWidth)*2-1;ptr.y=-(e.clientY/innerHeight)*2+1;
-  if(dragging){camTheta-=(e.clientX-pmx)*.004;camPhi-=(e.clientY-pmy)*.004;camPhi=Math.max(.08,Math.min(Math.PI-.08,camPhi));pmx=e.clientX;pmy=e.clientY}
-});
-// NO distance limits — infinite zoom
-canvas.addEventListener('wheel',e=>{if(activeV!==null)return;targetDist+=e.deltaY*.02;targetDist=Math.max(3,targetDist);e.preventDefault()},{passive:false});
+    <!-- Gear to reopen config -->
+    <button
+      id="gear"
+      onclick="document.getElementById('cfg').classList.remove('gone')"
+      title="Settings"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        style="width: 14px; height: 14px; stroke: var(--s300)"
+      >
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
+        />
+      </svg>
+    </button>
 
-function updateCam(){
-  if(autoRot)camTheta+=.0008;
-  camDist+=(targetDist-camDist)*.06;
-  cam.position.x=camDist*Math.sin(camPhi)*Math.sin(camTheta);
-  cam.position.y=camDist*Math.cos(camPhi);
-  cam.position.z=camDist*Math.sin(camPhi)*Math.cos(camTheta);
-  cam.lookAt(0,0,0);
+    <!-- Scan button -->
+    <button id="scan-btn" onclick="startScan()">Scan My Digital Life</button>
 
-  // Update distance indicator
-  const norm=Math.min(1,Math.max(0,(camDist-5)/60));
-  document.getElementById('dm').style.top=(norm*170)+'px';
-  document.getElementById('sd').textContent=camDist.toFixed(1);
-}
+    <!-- Scan progress overlay -->
+    <div id="scan-ov">
+      <div class="scan-box">
+        <div class="scan-title">Reading your life...</div>
+        <div class="scan-row">
+          <div class="scan-icon">Gmail</div>
+          <div class="scan-bar"><div class="scan-fill" id="sf-gm"></div></div>
+          <div class="scan-status" id="ss-gm">waiting</div>
+          <a
+            class="scan-link"
+            id="sl-gm"
+            href="#"
+            target="_blank"
+            style="display: none"
+            >live →</a
+          >
+        </div>
+        <div class="scan-row">
+          <div class="scan-icon">Docs</div>
+          <div class="scan-bar"><div class="scan-fill" id="sf-dc"></div></div>
+          <div class="scan-status" id="ss-dc">waiting</div>
+          <a
+            class="scan-link"
+            id="sl-dc"
+            href="#"
+            target="_blank"
+            style="display: none"
+            >live →</a
+          >
+        </div>
+        <div class="scan-row">
+          <div class="scan-icon">Drive</div>
+          <div class="scan-bar"><div class="scan-fill" id="sf-dv"></div></div>
+          <div class="scan-status" id="ss-dv">waiting</div>
+          <a
+            class="scan-link"
+            id="sl-dv"
+            href="#"
+            target="_blank"
+            style="display: none"
+            >live →</a
+          >
+        </div>
+        <div class="scan-final" id="scan-final"></div>
+      </div>
+    </div>
 
-// ============ CENTRAL CORE — "YOU" ============
-const coreGroup=new THREE.Group();scene.add(coreGroup);
-const coreGeo=new THREE.SphereGeometry(.55,64,64);
-const coreMat=new THREE.MeshBasicMaterial({color:0xffffff});
-const coreMesh=new THREE.Mesh(coreGeo,coreMat);coreGroup.add(coreMesh);
+    <!-- Live monitoring panel -->
+    <div id="live-panel">
+      <div class="lp-hd">Agent active</div>
+      <button class="lp-close" onclick="hideLivePanel()">✕</button>
+      <div class="lp-status">
+        <span class="lp-dot" id="lp-dot"></span
+        ><span id="lp-st">Running...</span>
+      </div>
+      <a class="lp-live" id="lp-url" href="#" target="_blank"
+        >Open live view →</a
+      >
+      <div class="lp-cost" id="lp-cost"></div>
+      <button class="lp-stop vis" id="lp-stop-btn" onclick="stopLiveAgent()">
+        Stop agent
+      </button>
+      <div class="lp-out" id="lp-out" style="display: none">
+        <div class="lp-out-l">Agent completed</div>
+        <div class="lp-out-t" id="lp-out-t"></div>
+      </div>
+    </div>
 
-// Multi-layered core glow
-[{s:1.2,o:.08,c:.95},{s:2.0,o:.04,c:.85},{s:3.5,o:.02,c:.8},{s:6,o:.01,c:.75}].forEach(g=>{
-  const geo=new THREE.SphereGeometry(g.s,32,32);
-  const mat=new THREE.MeshBasicMaterial({color:new THREE.Color(g.c,g.c,1),transparent:true,opacity:g.o,side:THREE.BackSide,depthWrite:false});
-  coreGroup.add(new THREE.Mesh(geo,mat));
-});
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      // ============ DATA — ordered by distance (close = realistic, far = wild) ============
+      const ZONES = [
+        "Close — a version of you that almost happened",
+        "Adjacent — a familiar life, tilted",
+        "Divergent — you might not recognize yourself",
+        "Far reach — barely you anymore",
+        "Outer rim — a stranger with your eyes",
+      ];
 
-// Core point light
-const coreLight=new THREE.PointLight(0xeeeeff,3,60);scene.add(coreLight);
-scene.add(new THREE.AmbientLight(0x332244,.25));
+      const D = [
+        // ZONE 1: CLOSE (r ~ 4-6)
+        {
+          y: "2022",
+          mo: "Feb",
+          url: "maps.google.com/dir/pacific-heights/half-moon-bay",
+          t: "Directions to Half Moon Bay — checked 14 times",
+          w: "You never went. You kept measuring the distance.",
+          c: [60, 200, 255],
+          zone: 0,
+          dist: 4.5,
+          a: {
+            l: "CLOSE VERSE — A SUNDAY DRIVE YOU NEVER TOOK",
+            t: "The Ocean at the End of the Search",
+            s: "Stillness isn't the opposite of action. It's the prerequisite.",
+            cv: "Stillness isn't the opposite of action in your multiverse. It's the prerequisite.",
+            p: "Write a deeply cinematic 150-word narrative about someone who finally drove to the ocean they kept googling. Highway 1, fog, music off. Brain stopped optimizing. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        {
+          y: "2019",
+          mo: "Dec",
+          url: "docs.google.com/d/untitled-letter-never-sent",
+          t: "Untitled Google Doc — 4,200 words, never shared",
+          w: "It started 'Dear —' and you never filled in the name.",
+          c: [255, 190, 70],
+          zone: 0,
+          dist: 5.2,
+          a: {
+            l: "CLOSE VERSE — THE LETTER THAT CHANGED THE SHAPE",
+            t: "The Letter You Sent",
+            s: "Your unsent messages outnumber sent 3:1.",
+            cv: "Your unsent messages outnumber your sent ones 3:1. The ratio is the story.",
+            p: "Write a deeply cinematic 150-word narrative about someone who sent the 4,200-word letter. Response came three days later — smaller, more honest than rehearsed. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        // ZONE 2: ADJACENT (r ~ 8-11)
+        {
+          y: "2018",
+          mo: "Mar",
+          url: "sfballet.org/season/swan-lake-tickets",
+          t: "Two tickets to Swan Lake, never purchased",
+          w: "You typed their name into the guest field and closed the tab.",
+          c: [255, 70, 130],
+          zone: 1,
+          dist: 8.5,
+          a: {
+            l: "ADJACENT VERSE — YOU SAID YES TO BEAUTY",
+            t: "You Went to the Ballet",
+            s: "A life that began with two tickets and a name you almost typed",
+            cv: "Across 7 of your timelines, the turning point is the small decision you almost didn't make.",
+            p: "Write a deeply cinematic 150-word narrative about an alternate life where someone bought ballet tickets and invited the person they feared to ask. Vulnerability cracked open. Sensory. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        {
+          y: "2020",
+          mo: "Nov",
+          url: "google.com/search?q=is+it+too+late+to+change+careers+at+27",
+          t: '"Is it too late to change careers at 27"',
+          w: "Searched at 2:47am. Also: 'careers that feel like play.'",
+          c: [255, 160, 30],
+          zone: 1,
+          dist: 10,
+          a: {
+            l: "ADJACENT VERSE — THE SEARCH WAS THE LAST ONE",
+            t: "You Closed the Laptop and Made the Call",
+            s: "The difference between timelines happens at 2:48am",
+            cv: "The 2:47am searches appear in every timeline. The difference is what happens at 2:48.",
+            p: "Write a deeply cinematic 150-word narrative about someone who stopped googling existential crisis at 2:47am and took action. Terrifying aliveness. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        // ZONE 3: DIVERGENT (r ~ 14-18)
+        {
+          y: "2019",
+          mo: "Aug",
+          url: "airbnb.com/rooms/lisbon-alfama-artist-studio",
+          t: "Artist studio in Alfama — saved but never booked",
+          w: "You bookmarked it three separate times over two years.",
+          c: [50, 120, 255],
+          zone: 2,
+          dist: 15,
+          a: {
+            l: "DIVERGENT VERSE — YOU LEFT EVERYTHING",
+            t: "The Lisbon Summer",
+            s: "Thirty days in a tile-walled studio with afternoon light",
+            cv: "In every timeline where you leave, you find yourself without context.",
+            p: "Write a deeply cinematic 150-word narrative about someone who booked the Lisbon artist studio for a month. Tiles, light, narrow streets. Wrote differently there. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        {
+          y: "2021",
+          mo: "May",
+          url: "dhamma.org/en/schedules/vipassana-10-day",
+          t: "10-day silent retreat — application left open 3 weeks",
+          w: "Everything filled except the emergency contact field.",
+          c: [180, 60, 255],
+          zone: 2,
+          dist: 16.5,
+          a: {
+            l: "DIVERGENT VERSE — YOU SAT WITH THE SILENCE",
+            t: "Ten Days of Nothing",
+            s: "You came home different. Not better. Softer.",
+            cv: "The body keeps appearing. Every version of you is trying to come home to the same place.",
+            p: "Write a deeply cinematic 150-word narrative about someone who completed a 10-day silent retreat. Day four broke them. Day seven, laughing at nothing. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        // ZONE 4: FAR REACH (r ~ 22-28)
+        {
+          y: "2017",
+          mo: "Oct",
+          url: "github.com/new — repo: 'dream-journal-ai'",
+          t: "dream-journal-ai — 3 commits, then silence",
+          w: "Last commit: 'this might actually be something.'",
+          c: [30, 230, 140],
+          zone: 3,
+          dist: 24,
+          a: {
+            l: "FAR REACH — YOU BECAME THE BUILDER",
+            t: "The Thing You Almost Built",
+            s: "It wasn't the app. It was learning you could finish.",
+            cv: "In timelines where you finish things, the completion rewires your self-trust.",
+            p: "Write a deeply cinematic 150-word narrative about someone who pushed past commit #3 and built something wild and strange that changed the trajectory of their career. Creation as identity. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        {
+          y: "2023",
+          mo: "Jul",
+          url: "letterboxd.com/list/films-about-people-who-disappear",
+          t: '"Films about people who disappear" — 23 films',
+          w: "You watched seven in one weekend.",
+          c: [220, 50, 220],
+          zone: 3,
+          dist: 26,
+          a: {
+            l: "FAR REACH — YOU UNDERSTOOD THE PATTERN",
+            t: "What the Disappearing Was About",
+            s: "You didn't want to vanish. You wanted to be found.",
+            cv: "Every timeline has this: you stop performing absence and start risking presence.",
+            p: "Write a deeply cinematic 150-word narrative about someone who realized their disappearing obsession was about wanting to be found. Psychological self-recognition. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        // ZONE 5: OUTER RIM — procedurally implied (r ~ 35+)
+        {
+          y: "2016",
+          mo: "Jun",
+          url: "craigslist.org/van-conversion-sprinter-diy",
+          t: "DIY van conversion guide — 47 tabs open simultaneously",
+          w: "You priced out solar panels at 3am on a Tuesday.",
+          c: [255, 80, 40],
+          zone: 4,
+          dist: 38,
+          a: {
+            l: "OUTER RIM — A STRANGER WITH YOUR EYES",
+            t: "The Year You Lived in a Van",
+            s: "No address. No Wi-Fi. No excuse not to become yourself.",
+            cv: "In the most distant timelines, you have the least and feel the most.",
+            p: "Write a deeply cinematic 150-word narrative about someone who sold everything and lived in a converted van for a year. Radical simplicity. They became someone unrecognizable to their former self — freer, wilder, more honest. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+        {
+          y: "2015",
+          mo: "Sep",
+          url: "juilliard.edu/admissions/acting-mfa-application",
+          t: "Juilliard MFA Acting — application PDF downloaded twice",
+          w: "You never told anyone you downloaded it.",
+          c: [255, 40, 90],
+          zone: 4,
+          dist: 45,
+          a: {
+            l: "OUTER RIM — THE LIFE ON STAGE",
+            t: "You Auditioned",
+            s: "The version of you that chose art over certainty.",
+            cv: "In the furthest timelines, the thing you're most afraid of is the thing that saves you.",
+            p: "Write a deeply cinematic 150-word narrative about someone who secretly applied to Juilliard for acting, got in, and left their entire career behind. The terror and aliveness of choosing art. Second person. Return ONLY prose. 6-8 sentences.",
+          },
+        },
+      ];
 
-// ============ PLANET NODES ============
-const raycaster=new THREE.Raycaster();raycaster.params.Points={threshold:.5};
-const ptr=new THREE.Vector2(-10,-10);
-let hoverIdx=-1,activeV=null;
+      // ============ THREE SETUP ============
+      const canvas = document.getElementById("c");
+      const R = new THREE.WebGLRenderer({ canvas, antialias: true });
+      R.setSize(innerWidth, innerHeight);
+      R.setPixelRatio(Math.min(devicePixelRatio, 2));
+      R.setClearColor(0x030206);
+      R.toneMapping = THREE.ACESFilmicToneMapping;
+      R.toneMappingExposure = 1.4;
 
-function mkGlowTex(col,intensity){
-  const cv=document.createElement('canvas');cv.width=256;cv.height=256;const x=cv.getContext('2d');
-  const [r,g,b]=col;
-  const gd=x.createRadialGradient(128,128,0,128,128,128);
-  gd.addColorStop(0,`rgba(${Math.min(255,r*intensity)},${Math.min(255,g*intensity)},${Math.min(255,b*intensity)},0.9)`);
-  gd.addColorStop(.15,`rgba(${r},${g},${b},0.4)`);
-  gd.addColorStop(.4,`rgba(${r},${g},${b},0.1)`);
-  gd.addColorStop(.7,`rgba(${r},${g},${b},0.02)`);
-  gd.addColorStop(1,'transparent');
-  x.fillStyle=gd;x.fillRect(0,0,256,256);
-  return new THREE.CanvasTexture(cv);
-}
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x030206, 0.004);
+      const cam = new THREE.PerspectiveCamera(
+        45,
+        innerWidth / innerHeight,
+        0.1,
+        4000
+      );
+      cam.position.set(0, 8, 20);
 
-const planets=[];
-D.forEach((d,i)=>{
-  const [r,g,b]=d.c.map(v=>v/255);
-  const grp=new THREE.Group();
-
-  // Larger base size for outer planets
-  const baseSize = 0.18 + d.zone * 0.04;
-
-  // Planet sphere — brighter, more emissive
-  const geo=new THREE.SphereGeometry(baseSize,32,32);
-  const mat=new THREE.MeshStandardMaterial({
-    color:new THREE.Color(r,g,b),
-    emissive:new THREE.Color(r,g,b),
-    emissiveIntensity:1.2+d.zone*0.3,
-    roughness:.3,metalness:.1
-  });
-  const mesh=new THREE.Mesh(geo,mat);
-  grp.add(mesh);
-
-  // Glow sprite — vivid
-  const spMat=new THREE.SpriteMaterial({
-    map:mkGlowTex(d.c,1.6),transparent:true,opacity:.7,
-    blending:THREE.AdditiveBlending,depthWrite:false
-  });
-  const sp=new THREE.Sprite(spMat);
-  const baseGlow = 2.5 + d.zone * 0.8;
-  sp.scale.set(baseGlow,baseGlow,1);
-  grp.add(sp);
-
-  // Halo ring
-  const hGeo=new THREE.RingGeometry(baseSize*1.6,baseSize*1.8,64);
-  const hMat=new THREE.MeshBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.15,side:THREE.DoubleSide,depthWrite:false});
-  const halo=new THREE.Mesh(hGeo,hMat);halo.rotation.x=Math.PI*.5;grp.add(halo);
-
-  // Position by angle
-  const angle=(i/D.length)*Math.PI*2+i*.3;
-  const ecc=.5+Math.random()*.4;
-  d._angle=angle;d._ecc=ecc;d._speed=.03+Math.random()*.025;
-  d._tiltX=(Math.random()-.5)*.5;d._tiltZ=(Math.random()-.5)*.4;
-  d._grp=grp;d._mesh=mesh;d._sp=sp;d._halo=halo;
-  d._baseSize=baseSize;d._baseGlow=baseGlow;
-  d._hoverAmt=0; // for volumetric expansion
-
-  scene.add(grp);
-  planets.push(mesh);
-
-  // Orbit ring
-  const pts=[];for(let j=0;j<=128;j++){const a=j/128*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*d.dist,0,Math.sin(a)*d.dist*ecc))}
-  const curve=new THREE.CatmullRomCurve3(pts,true);
-  const rGeo=new THREE.BufferGeometry().setFromPoints(curve.getPoints(256));
-  const rMat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.03+d.zone*.005});
-  const ring=new THREE.Line(rGeo,rMat);ring.rotation.x=d._tiltX;ring.rotation.z=d._tiltZ;
-  scene.add(ring);
-});
-
-document.getElementById('sv').textContent=D.length;
-
-// ============ THREADS — curved ============
-const threads=[];
-D.forEach((d,i)=>{
-  const geo=new THREE.BufferGeometry();
-  const pos=new Float32Array(60*3);geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const [r,g,b]=d.c.map(v=>v/255);
-  const mat=new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.08+d.zone*.01});
-  const line=new THREE.Line(geo,mat);scene.add(line);
-  threads.push({line,geo,toIdx:i,offset:Math.random()*10,baseOp:.08+d.zone*.01});
-
-  if(i<D.length-1){
-    const geo2=new THREE.BufferGeometry();
-    const pos2=new Float32Array(30*3);geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
-    const mat2=new THREE.LineBasicMaterial({color:0xa89eb8,transparent:true,opacity:.02});
-    const line2=new THREE.Line(geo2,mat2);scene.add(line2);
-    threads.push({line:line2,geo:geo2,fromIdx:i,toIdx:i+1,offset:Math.random()*10,baseOp:.02});
-  }
-});
-document.getElementById('st').textContent=threads.length;
-
-function updateThreads(t){
-  threads.forEach(th=>{
-    const segs=th.geo.attributes.position.array.length/3;
-    const from=th.fromIdx!==undefined?D[th.fromIdx]._grp.position.clone():new THREE.Vector3(0,0,0);
-    const to=D[th.toIdx]._grp.position.clone();
-    const mid=from.clone().add(to).multiplyScalar(.5);
-    const perp=new THREE.Vector3().crossVectors(to.clone().sub(from).normalize(),new THREE.Vector3(0,1,0)).multiplyScalar(1.2*Math.sin(t*.25+th.offset));
-    mid.add(perp);mid.y+=Math.cos(t*.2+th.offset)*.6;
-    const curve=new THREE.QuadraticBezierCurve3(from,mid,to);
-    const pts=curve.getPoints(segs-1);
-    const arr=th.geo.attributes.position.array;
-    pts.forEach((p,i)=>{arr[i*3]=p.x;arr[i*3+1]=p.y;arr[i*3+2]=p.z});
-    th.geo.attributes.position.needsUpdate=true;
-  });
-}
-
-// ============ STARS ============
-const sGeo=new THREE.BufferGeometry();const SC=3000,sP=new Float32Array(SC*3);
-for(let i=0;i<SC;i++){const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=80+Math.random()*400;sP[i*3]=r*Math.sin(ph)*Math.cos(th);sP[i*3+1]=r*Math.sin(ph)*Math.sin(th);sP[i*3+2]=r*Math.cos(ph)}
-sGeo.setAttribute('position',new THREE.BufferAttribute(sP,3));
-scene.add(new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xd4cee0,size:.1,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true})));
-
-// Nebula
-const nebulae=[];
-[{n:1500,rMin:2,rMax:22,y:4,c:0xb48fd4,s:.03,o:.12},{n:1000,rMin:5,rMax:30,y:3,c:0x8b9fd4,s:.025,o:.08},{n:600,rMin:20,rMax:50,y:6,c:0xff8866,s:.02,o:.04}].forEach(cfg=>{
-  const g=new THREE.BufferGeometry();const p=new Float32Array(cfg.n*3);
-  for(let i=0;i<cfg.n;i++){const a=Math.random()*Math.PI*2,r=cfg.rMin+Math.random()*cfg.rMax;p[i*3]=Math.cos(a)*r;p[i*3+1]=(Math.random()-.5)*cfg.y;p[i*3+2]=Math.sin(a)*r}
-  g.setAttribute('position',new THREE.BufferAttribute(p,3));
-  const pts=new THREE.Points(g,new THREE.PointsMaterial({color:cfg.c,size:cfg.s,transparent:true,opacity:cfg.o,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
-  pts._rotSpeed=(Math.random()-.5)*.0006;
-  scene.add(pts);
-  nebulae.push(pts);
-});
-
-// ============ TOOLTIP ============
-const tip=document.getElementById('tip');
-function updateTip(){
-  if(hoverIdx>=0&&activeV===null){
-    const d=D[hoverIdx];
-    document.getElementById('tt').textContent=d.mo+' '+d.y;
-    document.getElementById('tu').textContent=d.url;
-    document.getElementById('ttl').textContent=d.t;
-    document.getElementById('tw').textContent=d.w;
-    document.getElementById('td').textContent=ZONES[d.zone]+' · distance '+d.dist.toFixed(1);
-    const pos=D[hoverIdx]._grp.position.clone().project(cam);
-    let sx=(pos.x*.5+.5)*innerWidth,sy=(-pos.y*.5+.5)*innerHeight;
-    let tx=sx+30,ty=sy-28;
-    if(tx+330>innerWidth)tx=sx-340;if(ty<10)ty=10;if(ty+220>innerHeight)ty=innerHeight-230;
-    tip.style.left=tx+'px';tip.style.top=ty+'px';
-    tip.classList.add('vis');document.body.style.cursor='pointer';
-  }else{tip.classList.remove('vis');if(activeV===null&&!dragging)document.body.style.cursor='crosshair'}
-}
-
-// ============ MAIN LOOP ============
-let time=0;
-function loop(){
-  time+=.008;
-
-  // Orbit planets
-  D.forEach((d,i)=>{
-    d._angle+=d._speed*.006;
-    const a=d._angle,r=d.dist,ecc=d._ecc;
-    let x=Math.cos(a)*r,z=Math.sin(a)*r*ecc,y=0;
-    const cx=Math.cos(d._tiltX),sx=Math.sin(d._tiltX),cz=Math.cos(d._tiltZ),sz=Math.sin(d._tiltZ);
-    const y1=y*cx-z*sx,z1=y*sx+z*cx,x1=x*cz-y1*sz,y2=x*sz+y1*cz;
-    d._grp.position.set(x1,y2+Math.sin(time*1.2+i)*.05,z1);
-
-    // ---- VOLUMETRIC HOVER EXPANSION ----
-    const targetHover=(hoverIdx===i)?1:0;
-    d._hoverAmt+=(targetHover-d._hoverAmt)*.07;
-    const h=d._hoverAmt;
-    const expand=1+h*1.8; // up to 2.8x scale
-    d._mesh.scale.setScalar(expand);
-    d._mesh.material.emissiveIntensity=(1.2+d.zone*.3)+h*2.0;
-
-    // Glow expands volumetrically
-    const glowScale=d._baseGlow*(1+h*2.5);
-    d._sp.scale.set(glowScale,glowScale,1);
-    d._sp.material.opacity=.6+h*.5;
-
-    // Halo expands
-    const haloScale=1+h*2;
-    d._halo.scale.set(haloScale,haloScale,haloScale);
-    d._halo.material.opacity=.15+h*.4;
-    d._halo.rotation.x=Math.PI*.5+Math.sin(time+i)*.15;
-  });
-
-  // Core breathing
-  const p=.9+.1*Math.sin(time*1.5);
-  coreMesh.scale.setScalar(p);
-  coreLight.intensity=2.5+Math.sin(time*1.2);
-
-  // Nebulae rotate
-  scene.children.forEach(c=>{if(c.isPoints&&c._rotSpeed)c.rotation.y+=c._rotSpeed});
-
-  updateThreads(time);
-  updateCam();
-
-  // Raycast
-  raycaster.setFromCamera(ptr,cam);
-  const hits=raycaster.intersectObjects(planets);
-  hoverIdx=-1;
-
-  // Brighten threads on hover
-  threads.forEach(th=>{th.line.material.opacity=th.baseOp});
-
-  if(hits.length>0&&activeV===null){
-    const h=hits[0].object;
-    const idx=D.findIndex(d=>d._mesh===h);
-    if(idx>=0){
-      hoverIdx=idx;
-      threads.forEach(th=>{
-        if(th.toIdx===idx||(th.fromIdx===idx)){th.line.material.opacity=.4}
+      addEventListener("resize", () => {
+        cam.aspect = innerWidth / innerHeight;
+        cam.updateProjectionMatrix();
+        R.setSize(innerWidth, innerHeight);
       });
-    }
-  }
 
-  updateTip();
-  R.render(scene,cam);
-  requestAnimationFrame(loop);
-}
-loop();
+      // ============ CAMERA — infinite drag ============
+      let camTheta = 0,
+        camPhi = Math.PI * 0.28,
+        camDist = 22,
+        targetDist = 22;
+      let dragging = false,
+        pmx = 0,
+        pmy = 0,
+        autoRot = true,
+        autoTimer = null;
+      let mx = 0,
+        my = 0;
 
-// ============ CLICK → VERSE ============
-canvas.addEventListener('click',()=>{if(hoverIdx>=0&&activeV===null)enterV(hoverIdx)});
+      canvas.addEventListener("mousedown", (e) => {
+        if (activeV !== null) return;
+        dragging = true;
+        pmx = e.clientX;
+        pmy = e.clientY;
+        autoRot = false;
+        clearTimeout(autoTimer);
+      });
+      addEventListener("mouseup", () => {
+        dragging = false;
+        autoTimer = setTimeout(() => (autoRot = true), 4000);
+      });
+      addEventListener("mousemove", (e) => {
+        mx = e.clientX;
+        my = e.clientY;
+        ptr.x = (e.clientX / innerWidth) * 2 - 1;
+        ptr.y = -(e.clientY / innerHeight) * 2 + 1;
+        if (dragging) {
+          camTheta -= (e.clientX - pmx) * 0.004;
+          camPhi -= (e.clientY - pmy) * 0.004;
+          camPhi = Math.max(0.08, Math.min(Math.PI - 0.08, camPhi));
+          pmx = e.clientX;
+          pmy = e.clientY;
+        }
+      });
+      // NO distance limits — infinite zoom
+      canvas.addEventListener(
+        "wheel",
+        (e) => {
+          if (activeV !== null) return;
+          targetDist += e.deltaY * 0.02;
+          targetDist = Math.max(3, targetDist);
+          e.preventDefault();
+        },
+        { passive: false }
+      );
 
-function enterV(idx){
-  activeV=idx;tip.classList.remove('vis');
-  const ov=document.getElementById('po'),pc=document.getElementById('pc');
-  pc.width=innerWidth;pc.height=innerHeight;const px=pc.getContext('2d');ov.classList.add('on');
-  const [cr,cg,cb]=D[idx].c;
-  const sp=D[idx]._grp.position.clone().project(cam);
-  const ox=(sp.x*.5+.5)*innerWidth,oy=(-sp.y*.5+.5)*innerHeight;
-  let prog=0;const mR=Math.sqrt(innerWidth**2+innerHeight**2);
-  function anim(){
-    prog+=.022;px.clearRect(0,0,pc.width,pc.height);
-    for(let i=0;i<7;i++){const p=Math.max(0,prog-i*.035);if(p<=0)continue;const e=1-Math.pow(1-Math.min(p*1.3,1),3),r=e*mR;
-      px.strokeStyle=`rgba(${cr},${cg},${cb},${(1-e)*.1})`;px.lineWidth=1.5;px.beginPath();px.arc(ox,oy,r,0,Math.PI*2);px.stroke()}
-    const fp=Math.min(prog*2,1),fg=px.createRadialGradient(ox,oy,0,ox,oy,fp*mR*1.2);
-    fg.addColorStop(0,`rgba(${cr},${cg},${cb},${(1-fp)*.12})`);fg.addColorStop(.3,`rgba(3,2,6,${fp*.96})`);fg.addColorStop(1,`rgba(3,2,6,${fp})`);
-    px.fillStyle=fg;px.fillRect(0,0,pc.width,pc.height);
-    if(prog<1)requestAnimationFrame(anim);
-    else setTimeout(()=>{showV(idx);let fo=1;function fd(){fo-=.04;px.clearRect(0,0,pc.width,pc.height);px.fillStyle=`rgba(3,2,6,${Math.max(fo,0)})`;px.fillRect(0,0,pc.width,pc.height);if(fo>0)requestAnimationFrame(fd);else ov.classList.remove('on')}fd()},120);
-  }
-  anim();
-}
+      function updateCam() {
+        if (autoRot) camTheta += 0.0008;
+        camDist += (targetDist - camDist) * 0.06;
+        cam.position.x = camDist * Math.sin(camPhi) * Math.sin(camTheta);
+        cam.position.y = camDist * Math.cos(camPhi);
+        cam.position.z = camDist * Math.sin(camPhi) * Math.cos(camTheta);
+        cam.lookAt(0, 0, 0);
 
-function showV(idx){
-  const d=D[idx],a=d.a;
-  document.querySelectorAll('.mc').forEach(e=>e.classList.add('h'));document.body.style.cursor='default';
-  document.getElementById('vvc').innerHTML=`
+        // Update distance indicator
+        const norm = Math.min(1, Math.max(0, (camDist - 5) / 60));
+        document.getElementById("dm").style.top = norm * 170 + "px";
+        document.getElementById("sd").textContent = camDist.toFixed(1);
+      }
+
+      // ============ CENTRAL CORE — "YOU" ============
+      const coreGroup = new THREE.Group();
+      scene.add(coreGroup);
+      const coreGeo = new THREE.SphereGeometry(0.55, 64, 64);
+      const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+      coreGroup.add(coreMesh);
+
+      // Multi-layered core glow
+      [
+        { s: 1.2, o: 0.08, c: 0.95 },
+        { s: 2.0, o: 0.04, c: 0.85 },
+        { s: 3.5, o: 0.02, c: 0.8 },
+        { s: 6, o: 0.01, c: 0.75 },
+      ].forEach((g) => {
+        const geo = new THREE.SphereGeometry(g.s, 32, 32);
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(g.c, g.c, 1),
+          transparent: true,
+          opacity: g.o,
+          side: THREE.BackSide,
+          depthWrite: false,
+        });
+        coreGroup.add(new THREE.Mesh(geo, mat));
+      });
+
+      // Core point light
+      const coreLight = new THREE.PointLight(0xeeeeff, 3, 60);
+      scene.add(coreLight);
+      scene.add(new THREE.AmbientLight(0x332244, 0.25));
+
+      // ============ PLANET NODES ============
+      const raycaster = new THREE.Raycaster();
+      raycaster.params.Points = { threshold: 0.5 };
+      const ptr = new THREE.Vector2(-10, -10);
+      let hoverIdx = -1,
+        activeV = null;
+
+      function mkGlowTex(col, intensity) {
+        const cv = document.createElement("canvas");
+        cv.width = 256;
+        cv.height = 256;
+        const x = cv.getContext("2d");
+        const [r, g, b] = col;
+        const gd = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+        gd.addColorStop(
+          0,
+          `rgba(${Math.min(255, r * intensity)},${Math.min(
+            255,
+            g * intensity
+          )},${Math.min(255, b * intensity)},0.9)`
+        );
+        gd.addColorStop(0.15, `rgba(${r},${g},${b},0.4)`);
+        gd.addColorStop(0.4, `rgba(${r},${g},${b},0.1)`);
+        gd.addColorStop(0.7, `rgba(${r},${g},${b},0.02)`);
+        gd.addColorStop(1, "transparent");
+        x.fillStyle = gd;
+        x.fillRect(0, 0, 256, 256);
+        return new THREE.CanvasTexture(cv);
+      }
+
+      const planets = [];
+      D.forEach((d, i) => {
+        const [r, g, b] = d.c.map((v) => v / 255);
+        const grp = new THREE.Group();
+
+        // Larger base size for outer planets
+        const baseSize = 0.18 + d.zone * 0.04;
+
+        // Planet sphere — brighter, more emissive
+        const geo = new THREE.SphereGeometry(baseSize, 32, 32);
+        const mat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(r, g, b),
+          emissive: new THREE.Color(r, g, b),
+          emissiveIntensity: 1.2 + d.zone * 0.3,
+          roughness: 0.3,
+          metalness: 0.1,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        grp.add(mesh);
+
+        // Glow sprite — vivid
+        const spMat = new THREE.SpriteMaterial({
+          map: mkGlowTex(d.c, 1.6),
+          transparent: true,
+          opacity: 0.7,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const sp = new THREE.Sprite(spMat);
+        const baseGlow = 2.5 + d.zone * 0.8;
+        sp.scale.set(baseGlow, baseGlow, 1);
+        grp.add(sp);
+
+        // Halo ring
+        const hGeo = new THREE.RingGeometry(baseSize * 1.6, baseSize * 1.8, 64);
+        const hMat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(r, g, b),
+          transparent: true,
+          opacity: 0.15,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+        const halo = new THREE.Mesh(hGeo, hMat);
+        halo.rotation.x = Math.PI * 0.5;
+        grp.add(halo);
+
+        // Position by angle
+        const angle = (i / D.length) * Math.PI * 2 + i * 0.3;
+        const ecc = 0.5 + Math.random() * 0.4;
+        d._angle = angle;
+        d._ecc = ecc;
+        d._speed = 0.03 + Math.random() * 0.025;
+        d._tiltX = (Math.random() - 0.5) * 0.5;
+        d._tiltZ = (Math.random() - 0.5) * 0.4;
+        d._grp = grp;
+        d._mesh = mesh;
+        d._sp = sp;
+        d._halo = halo;
+        d._baseSize = baseSize;
+        d._baseGlow = baseGlow;
+        d._hoverAmt = 0; // for volumetric expansion
+
+        scene.add(grp);
+        planets.push(mesh);
+
+        // Orbit ring
+        const pts = [];
+        for (let j = 0; j <= 128; j++) {
+          const a = (j / 128) * Math.PI * 2;
+          pts.push(
+            new THREE.Vector3(
+              Math.cos(a) * d.dist,
+              0,
+              Math.sin(a) * d.dist * ecc
+            )
+          );
+        }
+        const curve = new THREE.CatmullRomCurve3(pts, true);
+        const rGeo = new THREE.BufferGeometry().setFromPoints(
+          curve.getPoints(256)
+        );
+        const rMat = new THREE.LineBasicMaterial({
+          color: new THREE.Color(r, g, b),
+          transparent: true,
+          opacity: 0.03 + d.zone * 0.005,
+        });
+        const ring = new THREE.Line(rGeo, rMat);
+        ring.rotation.x = d._tiltX;
+        ring.rotation.z = d._tiltZ;
+        scene.add(ring);
+      });
+
+      document.getElementById("sv").textContent = D.length;
+
+      // ============ THREADS — curved ============
+      const threads = [];
+      D.forEach((d, i) => {
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(60 * 3);
+        geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        const [r, g, b] = d.c.map((v) => v / 255);
+        const mat = new THREE.LineBasicMaterial({
+          color: new THREE.Color(r, g, b),
+          transparent: true,
+          opacity: 0.08 + d.zone * 0.01,
+        });
+        const line = new THREE.Line(geo, mat);
+        scene.add(line);
+        threads.push({
+          line,
+          geo,
+          toIdx: i,
+          offset: Math.random() * 10,
+          baseOp: 0.08 + d.zone * 0.01,
+        });
+
+        if (i < D.length - 1) {
+          const geo2 = new THREE.BufferGeometry();
+          const pos2 = new Float32Array(30 * 3);
+          geo2.setAttribute("position", new THREE.BufferAttribute(pos2, 3));
+          const mat2 = new THREE.LineBasicMaterial({
+            color: 0xa89eb8,
+            transparent: true,
+            opacity: 0.02,
+          });
+          const line2 = new THREE.Line(geo2, mat2);
+          scene.add(line2);
+          threads.push({
+            line: line2,
+            geo: geo2,
+            fromIdx: i,
+            toIdx: i + 1,
+            offset: Math.random() * 10,
+            baseOp: 0.02,
+          });
+        }
+      });
+      document.getElementById("st").textContent = threads.length;
+
+      function updateThreads(t) {
+        threads.forEach((th) => {
+          const segs = th.geo.attributes.position.array.length / 3;
+          const from =
+            th.fromIdx !== undefined
+              ? D[th.fromIdx]._grp.position.clone()
+              : new THREE.Vector3(0, 0, 0);
+          const to = D[th.toIdx]._grp.position.clone();
+          const mid = from.clone().add(to).multiplyScalar(0.5);
+          const perp = new THREE.Vector3()
+            .crossVectors(
+              to.clone().sub(from).normalize(),
+              new THREE.Vector3(0, 1, 0)
+            )
+            .multiplyScalar(1.2 * Math.sin(t * 0.25 + th.offset));
+          mid.add(perp);
+          mid.y += Math.cos(t * 0.2 + th.offset) * 0.6;
+          const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
+          const pts = curve.getPoints(segs - 1);
+          const arr = th.geo.attributes.position.array;
+          pts.forEach((p, i) => {
+            arr[i * 3] = p.x;
+            arr[i * 3 + 1] = p.y;
+            arr[i * 3 + 2] = p.z;
+          });
+          th.geo.attributes.position.needsUpdate = true;
+        });
+      }
+
+      // ============ STARS ============
+      const sGeo = new THREE.BufferGeometry();
+      const SC = 3000,
+        sP = new Float32Array(SC * 3);
+      for (let i = 0; i < SC; i++) {
+        const th = Math.random() * Math.PI * 2,
+          ph = Math.acos(2 * Math.random() - 1),
+          r = 80 + Math.random() * 400;
+        sP[i * 3] = r * Math.sin(ph) * Math.cos(th);
+        sP[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th);
+        sP[i * 3 + 2] = r * Math.cos(ph);
+      }
+      sGeo.setAttribute("position", new THREE.BufferAttribute(sP, 3));
+      scene.add(
+        new THREE.Points(
+          sGeo,
+          new THREE.PointsMaterial({
+            color: 0xd4cee0,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            sizeAttenuation: true,
+          })
+        )
+      );
+
+      // Nebula
+      const nebulae = [];
+      [
+        { n: 1500, rMin: 2, rMax: 22, y: 4, c: 0xb48fd4, s: 0.03, o: 0.12 },
+        { n: 1000, rMin: 5, rMax: 30, y: 3, c: 0x8b9fd4, s: 0.025, o: 0.08 },
+        { n: 600, rMin: 20, rMax: 50, y: 6, c: 0xff8866, s: 0.02, o: 0.04 },
+      ].forEach((cfg) => {
+        const g = new THREE.BufferGeometry();
+        const p = new Float32Array(cfg.n * 3);
+        for (let i = 0; i < cfg.n; i++) {
+          const a = Math.random() * Math.PI * 2,
+            r = cfg.rMin + Math.random() * cfg.rMax;
+          p[i * 3] = Math.cos(a) * r;
+          p[i * 3 + 1] = (Math.random() - 0.5) * cfg.y;
+          p[i * 3 + 2] = Math.sin(a) * r;
+        }
+        g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+        const pts = new THREE.Points(
+          g,
+          new THREE.PointsMaterial({
+            color: cfg.c,
+            size: cfg.s,
+            transparent: true,
+            opacity: cfg.o,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            sizeAttenuation: true,
+          })
+        );
+        pts._rotSpeed = (Math.random() - 0.5) * 0.0006;
+        scene.add(pts);
+        nebulae.push(pts);
+      });
+
+      // ============ TOOLTIP ============
+      const tip = document.getElementById("tip");
+      function updateTip() {
+        if (hoverIdx >= 0 && activeV === null) {
+          const d = D[hoverIdx];
+          document.getElementById("tt").textContent = d.mo + " " + d.y;
+          document.getElementById("tu").textContent = d.url;
+          document.getElementById("ttl").textContent = d.t;
+          document.getElementById("tw").textContent = d.w;
+          document.getElementById("td").textContent =
+            ZONES[d.zone] + " · distance " + d.dist.toFixed(1);
+          const pos = D[hoverIdx]._grp.position.clone().project(cam);
+          let sx = (pos.x * 0.5 + 0.5) * innerWidth,
+            sy = (-pos.y * 0.5 + 0.5) * innerHeight;
+          let tx = sx + 30,
+            ty = sy - 28;
+          if (tx + 330 > innerWidth) tx = sx - 340;
+          if (ty < 10) ty = 10;
+          if (ty + 220 > innerHeight) ty = innerHeight - 230;
+          tip.style.left = tx + "px";
+          tip.style.top = ty + "px";
+          tip.classList.add("vis");
+          document.body.style.cursor = "pointer";
+        } else {
+          tip.classList.remove("vis");
+          if (activeV === null && !dragging)
+            document.body.style.cursor = "crosshair";
+        }
+      }
+
+      // ============ MAIN LOOP ============
+      let time = 0;
+      function loop() {
+        time += 0.008;
+
+        // Orbit planets
+        D.forEach((d, i) => {
+          d._angle += d._speed * 0.006;
+          const a = d._angle,
+            r = d.dist,
+            ecc = d._ecc;
+          let x = Math.cos(a) * r,
+            z = Math.sin(a) * r * ecc,
+            y = 0;
+          const cx = Math.cos(d._tiltX),
+            sx = Math.sin(d._tiltX),
+            cz = Math.cos(d._tiltZ),
+            sz = Math.sin(d._tiltZ);
+          const y1 = y * cx - z * sx,
+            z1 = y * sx + z * cx,
+            x1 = x * cz - y1 * sz,
+            y2 = x * sz + y1 * cz;
+          d._grp.position.set(x1, y2 + Math.sin(time * 1.2 + i) * 0.05, z1);
+
+          // ---- VOLUMETRIC HOVER EXPANSION ----
+          const targetHover = hoverIdx === i ? 1 : 0;
+          d._hoverAmt += (targetHover - d._hoverAmt) * 0.07;
+          const h = d._hoverAmt;
+          const expand = 1 + h * 1.8; // up to 2.8x scale
+          d._mesh.scale.setScalar(expand);
+          d._mesh.material.emissiveIntensity = 1.2 + d.zone * 0.3 + h * 2.0;
+
+          // Glow expands volumetrically
+          const glowScale = d._baseGlow * (1 + h * 2.5);
+          d._sp.scale.set(glowScale, glowScale, 1);
+          d._sp.material.opacity = 0.6 + h * 0.5;
+
+          // Halo expands
+          const haloScale = 1 + h * 2;
+          d._halo.scale.set(haloScale, haloScale, haloScale);
+          d._halo.material.opacity = 0.15 + h * 0.4;
+          d._halo.rotation.x = Math.PI * 0.5 + Math.sin(time + i) * 0.15;
+        });
+
+        // Core breathing
+        const p = 0.9 + 0.1 * Math.sin(time * 1.5);
+        coreMesh.scale.setScalar(p);
+        coreLight.intensity = 2.5 + Math.sin(time * 1.2);
+
+        // Nebulae rotate
+        scene.children.forEach((c) => {
+          if (c.isPoints && c._rotSpeed) c.rotation.y += c._rotSpeed;
+        });
+
+        updateThreads(time);
+        updateCam();
+
+        // Raycast
+        raycaster.setFromCamera(ptr, cam);
+        const hits = raycaster.intersectObjects(planets);
+        hoverIdx = -1;
+
+        // Brighten threads on hover
+        threads.forEach((th) => {
+          th.line.material.opacity = th.baseOp;
+        });
+
+        if (hits.length > 0 && activeV === null) {
+          const h = hits[0].object;
+          const idx = D.findIndex((d) => d._mesh === h);
+          if (idx >= 0) {
+            hoverIdx = idx;
+            threads.forEach((th) => {
+              if (th.toIdx === idx || th.fromIdx === idx) {
+                th.line.material.opacity = 0.4;
+              }
+            });
+          }
+        }
+
+        updateTip();
+        R.render(scene, cam);
+        requestAnimationFrame(loop);
+      }
+      loop();
+
+      // ============ CLICK → VERSE ============
+      canvas.addEventListener("click", () => {
+        if (hoverIdx >= 0 && activeV === null) enterV(hoverIdx);
+      });
+
+      function enterV(idx) {
+        activeV = idx;
+        tip.classList.remove("vis");
+        const ov = document.getElementById("po"),
+          pc = document.getElementById("pc");
+        pc.width = innerWidth;
+        pc.height = innerHeight;
+        const px = pc.getContext("2d");
+        ov.classList.add("on");
+        const [cr, cg, cb] = D[idx].c;
+        const sp = D[idx]._grp.position.clone().project(cam);
+        const ox = (sp.x * 0.5 + 0.5) * innerWidth,
+          oy = (-sp.y * 0.5 + 0.5) * innerHeight;
+        let prog = 0;
+        const mR = Math.sqrt(innerWidth ** 2 + innerHeight ** 2);
+        function anim() {
+          prog += 0.022;
+          px.clearRect(0, 0, pc.width, pc.height);
+          for (let i = 0; i < 7; i++) {
+            const p = Math.max(0, prog - i * 0.035);
+            if (p <= 0) continue;
+            const e = 1 - Math.pow(1 - Math.min(p * 1.3, 1), 3),
+              r = e * mR;
+            px.strokeStyle = `rgba(${cr},${cg},${cb},${(1 - e) * 0.1})`;
+            px.lineWidth = 1.5;
+            px.beginPath();
+            px.arc(ox, oy, r, 0, Math.PI * 2);
+            px.stroke();
+          }
+          const fp = Math.min(prog * 2, 1),
+            fg = px.createRadialGradient(ox, oy, 0, ox, oy, fp * mR * 1.2);
+          fg.addColorStop(0, `rgba(${cr},${cg},${cb},${(1 - fp) * 0.12})`);
+          fg.addColorStop(0.3, `rgba(3,2,6,${fp * 0.96})`);
+          fg.addColorStop(1, `rgba(3,2,6,${fp})`);
+          px.fillStyle = fg;
+          px.fillRect(0, 0, pc.width, pc.height);
+          if (prog < 1) requestAnimationFrame(anim);
+          else
+            setTimeout(() => {
+              showV(idx);
+              let fo = 1;
+              function fd() {
+                fo -= 0.04;
+                px.clearRect(0, 0, pc.width, pc.height);
+                px.fillStyle = `rgba(3,2,6,${Math.max(fo, 0)})`;
+                px.fillRect(0, 0, pc.width, pc.height);
+                if (fo > 0) requestAnimationFrame(fd);
+                else ov.classList.remove("on");
+              }
+              fd();
+            }, 120);
+        }
+        anim();
+      }
+
+      function showV(idx) {
+        const d = D[idx],
+          a = d.a;
+        document.querySelectorAll(".mc").forEach((e) => e.classList.add("h"));
+        document.body.style.cursor = "default";
+        document.getElementById("vvc").innerHTML = `
     <div class="vo rv" style="animation-delay:0s">${a.l}</div>
     <div class="vurl rv" style="animation-delay:.1s">${d.url}</div>
     <h2 class="vtit rv" style="animation-delay:.2s">${a.t}</h2>
@@ -458,36 +1980,517 @@ function showV(idx){
     <div class="ga" id="ga"><div class="ga-l">Verse generated — an alternate life</div><div class="ga-n" id="gn"></div></div>
     <div class="acts rv" style="animation-delay:.55s">
       <button class="ab" onclick="pullTL(${idx})"><span>Pull into this timeline</span><span class="ar">→</span></button>
-      <button class="ab rx"><span>Remix this verse</span><span class="ar">↻</span></button>
+      <button class="ab rx" onclick="remixV(${idx})"><span>Remix this verse</span><span class="ar">↻</span></button>
       <button class="ab lg"><span>Let go</span><span class="ar">·</span></button></div>
-    <div class="cv rv" style="animation-delay:.65s"><div class="cv-l">Convergence · ${ZONES[d.zone]}</div><div class="cv-t">${a.cv}</div></div>`;
-  document.getElementById('vv').classList.add('on');document.getElementById('vb').classList.add('vis');
-}
+    <div class="cv rv" style="animation-delay:.65s"><div class="cv-l">Convergence · ${
+      ZONES[d.zone]
+    }</div><div class="cv-t">${a.cv}</div></div>`;
+        document.getElementById("vv").classList.add("on");
+        document.getElementById("vb").classList.add("vis");
+      }
 
-function exitV(){document.getElementById('vv').classList.remove('on');document.getElementById('vb').classList.remove('vis');document.querySelectorAll('.mc').forEach(e=>e.classList.remove('h'));document.body.style.cursor='crosshair';activeV=null}
+      function exitV() {
+        document.getElementById("vv").classList.remove("on");
+        document.getElementById("vb").classList.remove("vis");
+        document
+          .querySelectorAll(".mc")
+          .forEach((e) => e.classList.remove("h"));
+        document.body.style.cursor = "crosshair";
+        activeV = null;
+      }
 
-async function genV(idx){
-  const btn=document.getElementById('gb'),lbl=document.getElementById('gl'),area=document.getElementById('ga'),nar=document.getElementById('gn');
-  btn.classList.add('ld');lbl.textContent='Entering alternate timeline...';
-  try{const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:D[idx].a.p}]})});
-    const data=await res.json();const text=data.content.map(c=>c.text||'').join('');
-    const sents=text.match(/[^.!?]+[.!?]+/g)||[text];
-    nar.innerHTML=sents.map((s,i)=>`<span class="sn" style="animation-delay:${i*.35}s">${s.trim()} </span>`).join('');
-    btn.classList.remove('ld');lbl.textContent='Verse complete';area.classList.add('vis');
-    setTimeout(()=>{nar.querySelectorAll('.sn').forEach((el,i)=>{setTimeout(()=>el.classList.add('vis'),i*350)})},100);
-  }catch(e){btn.classList.remove('ld');lbl.textContent='Could not reach this timeline'}
-}
+      async function genV(idx) {
+        const btn = document.getElementById("gb"),
+          lbl = document.getElementById("gl"),
+          area = document.getElementById("ga"),
+          nar = document.getElementById("gn");
+        btn.classList.add("ld");
+        lbl.textContent = "Entering alternate timeline...";
+        try {
+          const res = await fetch("/api/anthropic/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1000,
+              messages: [{ role: "user", content: D[idx].a.p }],
+            }),
+          });
+          const data = await res.json();
+          const text = data.content.map((c) => c.text || "").join("");
+          const sents = text.match(/[^.!?]+[.!?]+/g) || [text];
+          nar.innerHTML = sents
+            .map(
+              (s, i) =>
+                `<span class="sn" style="animation-delay:${
+                  i * 0.35
+                }s">${s.trim()} </span>`
+            )
+            .join("");
+          btn.classList.remove("ld");
+          lbl.textContent = "Verse complete";
+          area.classList.add("vis");
+          setTimeout(() => {
+            nar.querySelectorAll(".sn").forEach((el, i) => {
+              setTimeout(() => el.classList.add("vis"), i * 350);
+            });
+          }, 100);
+        } catch (e) {
+          btn.classList.remove("ld");
+          lbl.textContent = "Could not reach this timeline";
+        }
+      }
 
-async function pullTL(idx){
-  const area=document.getElementById('ga'),nar=document.getElementById('gn');area.classList.add('vis');
-  nar.innerHTML='<span class="sn vis" style="color:var(--violet)">Mapping path into this timeline...</span>';const d=D[idx];
-  try{const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:`Someone explored an alternate life based on: "${d.t}" (${d.w}). Verse: "${d.a.t}" — ${d.a.s}. This life is in the "${ZONES[d.zone]}" zone — ${d.zone>=3?'radically different from their current life':'a plausible nearby life'}. Write 5 concrete, specific, poetic-but-actionable steps for THIS WEEK. Be specific. Warm, direct, urgent — advice from a future self. Return ONLY 5 numbered steps.`}]})});
-    const data=await res.json();const text=data.content.map(c=>c.text||'').join('');
-    const steps=text.split(/\d+[\.\)]\s*/).filter(Boolean);
-    nar.innerHTML=`<div class="ga-l" style="color:var(--warm);margin-bottom:16px">PULL INTO THIS TIMELINE — THIS WEEK</div>`+steps.map((s,i)=>`<span class="sn" style="animation-delay:${i*.4}s;display:block;margin-bottom:14px;padding-left:16px;border-left:1px solid var(--s600)">${s.trim()}</span>`).join('');
-    setTimeout(()=>{nar.querySelectorAll('.sn').forEach((el,i)=>{setTimeout(()=>el.classList.add('vis'),i*400)})},100);
-  }catch(e){nar.innerHTML='<span class="sn vis" style="color:var(--rose)">This path is temporarily unreachable.</span>'}
-}
-</script>
-</body>
+      // ============ CONFIG ============
+      let BU_PROFILE_ID = localStorage.getItem("bu_profile_id") || "";
+      (function initConfig() {
+        if (BU_PROFILE_ID) {
+          document.getElementById("cfg").classList.add("gone");
+          document.getElementById("scan-btn").classList.add("vis");
+        }
+      })();
+
+      function saveAndBegin() {
+        const v = document.getElementById("cfg-pid").value.trim();
+        if (!v) return;
+        BU_PROFILE_ID = v;
+        localStorage.setItem("bu_profile_id", v);
+        document.getElementById("cfg").classList.add("gone");
+        document.getElementById("scan-btn").classList.add("vis");
+      }
+
+      // ============ BROWSER USE CLIENT ============
+      async function buPost(path, body) {
+        const r = await fetch("/api/bu" + path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        return r.json();
+      }
+      async function buGet(path) {
+        const r = await fetch("/api/bu" + path);
+        return r.json();
+      }
+      const TERMINAL_STATUS = new Set([
+        "idle",
+        "stopped",
+        "timed_out",
+        "error",
+      ]);
+      function buPoll(sessionId, onTick) {
+        return new Promise((resolve, reject) => {
+          const iv = setInterval(async () => {
+            try {
+              const s = await buGet("/sessions/" + sessionId);
+              onTick(s);
+              if (TERMINAL_STATUS.has(s.status)) {
+                clearInterval(iv);
+                resolve(s);
+              }
+            } catch (e) {
+              clearInterval(iv);
+              reject(e);
+            }
+          }, 2000);
+        });
+      }
+
+      // ============ SCAN PROMPTS ============
+      const GMAIL_PROMPT = `Go to https://mail.google.com. Find near-miss moments — things I almost did.
+1. Drafts folder: list all drafts with subject, approximate word count, date created, and recipient if visible
+2. Sent folder: find the 10 people I email most — note the last email sent to each and when
+3. Inbox: find important emails received but never replied to, older than 3 months
+4. Any folders or labels with evocative or personal names
+Return ONLY valid JSON (no other text or markdown): {"drafts":[{"subject":"","wordCount":0,"date":"","to":""}],"fadedConnections":[{"person":"","lastContact":"","context":""}],"unreplied":[{"from":"","subject":"","date":""}],"patterns":[""]}`;
+
+      const DOCS_PROMPT = `Go to https://docs.google.com. Look at my recent documents.
+1. List the 20 most recently modified documents: title, date, whether personal or professional
+2. Find documents that look like: journals, creative projects, unfinished manifestos, business plans, or personal letters
+3. Note documents with emotionally resonant titles or that appear abandoned
+Return ONLY valid JSON (no other text or markdown): {"documents":[{"title":"","date":"","isPersonal":true,"type":""}],"interesting":[{"title":"","date":"","why":""}]}`;
+
+      const DRIVE_PROMPT = `Go to https://drive.google.com. Explore My Drive and Recent.
+1. Find folders with names suggesting projects, dreams, or goals
+2. Find files older than 2 years that haven't been opened recently
+3. Find shared collaborations that appear to have gone quiet
+4. Anything that looks like an abandoned project or aspiration
+Return ONLY valid JSON (no other text or markdown): {"folders":[{"name":"","type":""}],"oldFiles":[{"name":"","date":"","type":""}],"abandonedCollabs":[{"name":"","collaborators":"","lastModified":""}],"patterns":[""]}`;
+
+      function VERSE_BUILDER_PROMPT(gmail, docs, drive) {
+        return `You are building a poetic visualization called "Verse Walker" — a 3D map of alternate lives.
+Given someone's real digital life data from Gmail, Google Docs, and Google Drive, create 8-10 verses.
+Each verse is a near-miss moment — something they almost became, a path almost taken.
+
+Return a JSON array. Each object must match EXACTLY this schema:
+{"y":"YEAR","mo":"Mon","url":"domain.com/path","t":"Short title like a browser history artifact","w":"One poetic whisper — what this really meant to them","c":[r,g,b],"zone":0,"dist":5.0,"a":{"l":"ZONE NAME — NARRATIVE LABEL IN CAPS","t":"Cinematic alternate-life title","s":"One-line description of this alternate path","cv":"Convergence insight, 3rd person, poetic, about a recurring pattern","p":"Prompt for Claude to write 150-word second-person cinematic narrative, return ONLY prose, 6-8 sentences"}}
+
+Zone ranges (zone must match dist): 0=close dist 4-6, 1=adjacent dist 8-11, 2=divergent dist 14-18, 3=far dist 22-28, 4=outer dist 35-50
+Make colors vivid and emotionally resonant. Spread across all 5 zones.
+Be specific and true to the actual data — name real documents, real patterns.
+
+Gmail data: ${gmail}
+Docs data: ${docs}
+Drive data: ${drive}
+
+Return ONLY the JSON array. No explanation, no markdown fences.`;
+      }
+
+      // ============ SCAN FLOW ============
+      async function startScan() {
+        if (!BU_PROFILE_ID) {
+          document.getElementById("cfg").classList.remove("gone");
+          return;
+        }
+        document.getElementById("scan-ov").classList.add("on");
+        document.getElementById("scan-btn").classList.add("act");
+
+        const agents = [
+          {
+            prompt: GMAIL_PROMPT,
+            fillId: "sf-gm",
+            statusId: "ss-gm",
+            linkId: "sl-gm",
+          },
+          {
+            prompt: DOCS_PROMPT,
+            fillId: "sf-dc",
+            statusId: "ss-dc",
+            linkId: "sl-dc",
+          },
+          {
+            prompt: DRIVE_PROMPT,
+            fillId: "sf-dv",
+            statusId: "ss-dv",
+            linkId: "sl-dv",
+          },
+        ];
+
+        async function runAgent(ag) {
+          document.getElementById(ag.statusId).textContent = "starting";
+          document.getElementById(ag.fillId).classList.add("run");
+          const session = await buPost("/sessions", {
+            task: ag.prompt,
+            profileId: BU_PROFILE_ID,
+            model: "bu-max",
+            keepAlive: false,
+          });
+          if (session.liveUrl) {
+            const lnk = document.getElementById(ag.linkId);
+            lnk.href = session.liveUrl;
+            lnk.style.display = "inline";
+          }
+          const result = await buPoll(session.id, (s) => {
+            document.getElementById(ag.statusId).textContent = s.status;
+          });
+          document.getElementById(ag.fillId).classList.remove("run");
+          document.getElementById(ag.fillId).classList.add("done");
+          document.getElementById(ag.statusId).textContent =
+            result.status === "idle" ? "complete" : result.status;
+          return result.output;
+        }
+
+        try {
+          const [gmailOut, docsOut, driveOut] = await Promise.all(
+            agents.map(runAgent)
+          );
+          const fin = document.getElementById("scan-final");
+          fin.textContent = "Building your verses...";
+          fin.classList.add("vis");
+          await buildVersesFromData(gmailOut, docsOut, driveOut);
+          fin.textContent = "Your verses are ready. Explore outward.";
+          setTimeout(() => {
+            document.getElementById("scan-ov").classList.remove("on");
+            document.getElementById("scan-btn").classList.remove("act");
+          }, 2200);
+        } catch (e) {
+          const fin = document.getElementById("scan-final");
+          fin.textContent =
+            "Some timelines were unreachable. Partial data used.";
+          fin.classList.add("vis");
+          setTimeout(
+            () => document.getElementById("scan-ov").classList.remove("on"),
+            3000
+          );
+        }
+      }
+
+      // ============ VERSE BUILDER ============
+      async function buildVersesFromData(gmail, docs, drive) {
+        const toStr = (v) =>
+          typeof v === "string" ? v : JSON.stringify(v || {});
+        const res = await fetch("/api/anthropic/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            messages: [
+              {
+                role: "user",
+                content: VERSE_BUILDER_PROMPT(
+                  toStr(gmail),
+                  toStr(docs),
+                  toStr(drive)
+                ),
+              },
+            ],
+          }),
+        });
+        const data = await res.json();
+        const text = data.content.map((c) => c.text || "").join("");
+        const match = text.match(/\[[\s\S]*\]/);
+        if (!match) return;
+        JSON.parse(match[0]).forEach((v) => addVerse(v));
+      }
+
+      // ============ DYNAMIC VERSE ============
+      function addVerse(d) {
+        D.push(d);
+        const i = D.length - 1;
+        const [r, g, b] = d.c.map((v) => v / 255);
+        const grp = new THREE.Group();
+        const baseSize = 0.18 + d.zone * 0.04;
+
+        const geo = new THREE.SphereGeometry(baseSize, 32, 32);
+        const mat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(r, g, b),
+          emissive: new THREE.Color(r, g, b),
+          emissiveIntensity: 1.2 + d.zone * 0.3,
+          roughness: 0.3,
+          metalness: 0.1,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.scale.setScalar(0);
+        grp.add(mesh);
+
+        const spMat = new THREE.SpriteMaterial({
+          map: mkGlowTex(d.c, 1.6),
+          transparent: true,
+          opacity: 0.7,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const sp = new THREE.Sprite(spMat);
+        const baseGlow = 2.5 + d.zone * 0.8;
+        sp.scale.set(0, 0, 1);
+        grp.add(sp);
+
+        const hGeo = new THREE.RingGeometry(baseSize * 1.6, baseSize * 1.8, 64);
+        const hMat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(r, g, b),
+          transparent: true,
+          opacity: 0.15,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+        const halo = new THREE.Mesh(hGeo, hMat);
+        halo.rotation.x = Math.PI * 0.5;
+        grp.add(halo);
+
+        const angle = (i / D.length) * Math.PI * 2 + i * 0.3;
+        const ecc = 0.5 + Math.random() * 0.4;
+        d._angle = angle;
+        d._ecc = ecc;
+        d._speed = 0.03 + Math.random() * 0.025;
+        d._tiltX = (Math.random() - 0.5) * 0.5;
+        d._tiltZ = (Math.random() - 0.5) * 0.4;
+        d._grp = grp;
+        d._mesh = mesh;
+        d._sp = sp;
+        d._halo = halo;
+        d._baseSize = baseSize;
+        d._baseGlow = baseGlow;
+        d._hoverAmt = 0;
+        scene.add(grp);
+        planets.push(mesh);
+
+        let t = 0;
+        const delay = Math.random() * 600;
+        setTimeout(() => {
+          function animIn() {
+            t += 0.04;
+            const s = Math.min(1, t * t * (3 - 2 * t));
+            mesh.scale.setScalar(s);
+            sp.scale.set(baseGlow * s, baseGlow * s, 1);
+            if (t < 1) requestAnimationFrame(animIn);
+          }
+          animIn();
+        }, delay);
+
+        const pts = [];
+        for (let j = 0; j <= 128; j++) {
+          const a = (j / 128) * Math.PI * 2;
+          pts.push(
+            new THREE.Vector3(
+              Math.cos(a) * d.dist,
+              0,
+              Math.sin(a) * d.dist * ecc
+            )
+          );
+        }
+        const curve = new THREE.CatmullRomCurve3(pts, true);
+        const rGeo = new THREE.BufferGeometry().setFromPoints(
+          curve.getPoints(256)
+        );
+        const rMat = new THREE.LineBasicMaterial({
+          color: new THREE.Color(r, g, b),
+          transparent: true,
+          opacity: 0.03 + d.zone * 0.005,
+        });
+        const ring = new THREE.Line(rGeo, rMat);
+        ring.rotation.x = d._tiltX;
+        ring.rotation.z = d._tiltZ;
+        scene.add(ring);
+
+        const tGeo = new THREE.BufferGeometry();
+        const tPos = new Float32Array(60 * 3);
+        tGeo.setAttribute("position", new THREE.BufferAttribute(tPos, 3));
+        const tMat = new THREE.LineBasicMaterial({
+          color: new THREE.Color(r, g, b),
+          transparent: true,
+          opacity: 0.08 + d.zone * 0.01,
+        });
+        const line = new THREE.Line(tGeo, tMat);
+        scene.add(line);
+        threads.push({
+          line,
+          geo: tGeo,
+          toIdx: i,
+          offset: Math.random() * 10,
+          baseOp: 0.08 + d.zone * 0.01,
+        });
+
+        document.getElementById("sv").textContent = D.length;
+        document.getElementById("st").textContent = threads.length;
+      }
+
+      // ============ LIVE PANEL ============
+      let liveSessionId = null;
+
+      function showLivePanel(session) {
+        liveSessionId = session.id;
+        document.getElementById("lp-dot").className = "lp-dot";
+        document.getElementById("lp-st").textContent = "Running";
+        const a = document.getElementById("lp-url");
+        a.href = session.liveUrl || "#";
+        a.textContent = session.liveUrl
+          ? "Open live view →"
+          : "No live URL available";
+        document.getElementById("lp-cost").textContent = "";
+        document.getElementById("lp-out").style.display = "none";
+        document.getElementById("lp-stop-btn").classList.add("vis");
+        document.getElementById("live-panel").classList.add("on");
+      }
+
+      function hideLivePanel() {
+        document.getElementById("live-panel").classList.remove("on");
+        liveSessionId = null;
+      }
+
+      async function stopLiveAgent() {
+        if (!liveSessionId) return;
+        await buPost("/sessions/" + liveSessionId + "/stop", {
+          strategy: "task",
+        });
+        document.getElementById("lp-st").textContent = "Stopped";
+        document.getElementById("lp-stop-btn").classList.remove("vis");
+      }
+
+      // ============ REMIX / EXECUTE ============
+      async function remixV(idx) {
+        const d = D[idx];
+        if (!BU_PROFILE_ID) {
+          document.getElementById("cfg").classList.remove("gone");
+          return;
+        }
+
+        const task = `Based on a near-miss moment in my life — "${d.t}" (${d.w}) — take ONE meaningful, real action that moves me toward this alternate timeline: "${d.a.t}" — ${d.a.s}. Be specific and literal. Use my Google account (Gmail, Docs, or Drive). Create something tangible — draft an email, start a document, create a folder, write a first paragraph. Do not ask for confirmation. Do it, then tell me what you did.`;
+
+        try {
+          const session = await buPost("/sessions", {
+            task,
+            profileId: BU_PROFILE_ID,
+            model: "bu-max",
+            keepAlive: false,
+          });
+          showLivePanel(session);
+          const result = await buPoll(session.id, (s) => {
+            document.getElementById("lp-st").textContent = s.status;
+            if (s.totalCostUsd && s.totalCostUsd !== "0")
+              document.getElementById("lp-cost").textContent =
+                "$" + s.totalCostUsd + " used";
+          });
+          document.getElementById("lp-dot").className = "lp-dot done";
+          document.getElementById("lp-st").textContent = result.status;
+          document.getElementById("lp-stop-btn").classList.remove("vis");
+          if (result.output) {
+            const outEl = document.getElementById("lp-out");
+            document.getElementById("lp-out-t").textContent =
+              typeof result.output === "string"
+                ? result.output
+                : JSON.stringify(result.output, null, 2);
+            outEl.style.display = "block";
+          }
+        } catch (e) {
+          document.getElementById("lp-dot").className = "lp-dot err";
+          document.getElementById("lp-st").textContent = "Error: " + e.message;
+        }
+      }
+
+      async function pullTL(idx) {
+        const area = document.getElementById("ga"),
+          nar = document.getElementById("gn");
+        area.classList.add("vis");
+        nar.innerHTML =
+          '<span class="sn vis" style="color:var(--violet)">Mapping path into this timeline...</span>';
+        const d = D[idx];
+        try {
+          const res = await fetch("/api/anthropic/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1000,
+              messages: [
+                {
+                  role: "user",
+                  content: `Someone explored an alternate life based on: "${
+                    d.t
+                  }" (${d.w}). Verse: "${d.a.t}" — ${
+                    d.a.s
+                  }. This life is in the "${ZONES[d.zone]}" zone — ${
+                    d.zone >= 3
+                      ? "radically different from their current life"
+                      : "a plausible nearby life"
+                  }. Write 5 concrete, specific, poetic-but-actionable steps for THIS WEEK. Be specific. Warm, direct, urgent — advice from a future self. Return ONLY 5 numbered steps.`,
+                },
+              ],
+            }),
+          });
+          const data = await res.json();
+          const text = data.content.map((c) => c.text || "").join("");
+          const steps = text.split(/\d+[\.\)]\s*/).filter(Boolean);
+          nar.innerHTML =
+            `<div class="ga-l" style="color:var(--warm);margin-bottom:16px">PULL INTO THIS TIMELINE — THIS WEEK</div>` +
+            steps
+              .map(
+                (s, i) =>
+                  `<span class="sn" style="animation-delay:${
+                    i * 0.4
+                  }s;display:block;margin-bottom:14px;padding-left:16px;border-left:1px solid var(--s600)">${s.trim()}</span>`
+              )
+              .join("");
+          setTimeout(() => {
+            nar.querySelectorAll(".sn").forEach((el, i) => {
+              setTimeout(() => el.classList.add("vis"), i * 400);
+            });
+          }, 100);
+        } catch (e) {
+          nar.innerHTML =
+            '<span class="sn vis" style="color:var(--rose)">This path is temporarily unreachable.</span>';
+        }
+      }
+    </script>
+  </body>
 </html>
