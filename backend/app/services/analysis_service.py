@@ -28,6 +28,7 @@ For each path, assign:
 - title: a short, evocative name for this alternate life branch (e.g. "The Novelist You Almost Became")
 - description: 2-3 sentences in second person ("You...") that make this path feel real and emotionally resonant
 - evidence: the specific data point(s) that reveal this path (file name, draft subject, etc.)
+- action_url: a real, working URL the person would visit RIGHT NOW to pull themselves into this timeline. Not the evidence source — the action destination. For example: if they abandoned a novel, link to docs.google.com/document/create. If they almost booked a trip, link to the booking site. If they considered a career change, link to a job board or application page. Always a real URL that loads.
 - confidence: 0.0–1.0 how strongly the data suggests this was a real fork in the road
 - timeline_date: approximate date (YYYY-MM-DD or YYYY) if determinable, else null
 
@@ -84,12 +85,17 @@ async def run_analysis(user_id: str):
 
         for p in paths_data:
             try:
+                evidence = p.get("evidence", {})
+                if isinstance(evidence, str):
+                    evidence = {"raw": evidence}
+                if p.get("action_url"):
+                    evidence["url"] = p["action_url"]
                 path = PathNotTaken(
                     user_id=user_id,
                     category=p.get("category", "forgotten_interest"),
                     title=p.get("title", ""),
                     description=p.get("description", ""),
-                    evidence_json=json.dumps(p.get("evidence", {})),
+                    evidence_json=json.dumps(evidence),
                     source_service="google",
                     confidence=float(p.get("confidence", 0.5)),
                     timeline_date=p.get("timeline_date"),

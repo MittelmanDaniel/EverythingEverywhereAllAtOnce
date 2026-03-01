@@ -41,10 +41,10 @@ h1 em{font-style:italic;color:var(--warm)}
 .paths-count{font-family:'Instrument Serif',serif;font-size:28px;color:var(--warm);margin-bottom:12px}
 
 .footer{margin-top:36px;opacity:0;animation:fu 1.4s ease 1.2s forwards}
-.footer a{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s600);text-decoration:none;transition:color .3s}
-.footer a:hover{color:var(--s400)}
+.footer a{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--s400);text-decoration:none;transition:color .3s}
+.footer a:hover{color:var(--s200)}
 
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{display:inline-block;width:12px;height:12px;border:1.5px solid transparent;border-top-color:var(--violet);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
 
-.footer-sep{color:var(--s600);margin:0 10px}
+.footer-sep{color:var(--s400);margin:0 10px}

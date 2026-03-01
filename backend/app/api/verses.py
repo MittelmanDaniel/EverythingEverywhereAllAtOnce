@@ -1,21 +1,25 @@
 import hashlib
 import json
+import logging
 
 from typing import Optional
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.base import create_session, get_client
 from app.api.deps import get_current_user
 from app.config import settings
 from app.database import get_db
 from app.models.analysis import PathNotTaken
 from app.models.user import User
 from app.utils.security import decode_access_token
+
+logger = logging.getLogger(__name__)
 
 optional_bearer = HTTPBearer(auto_error=False)
 
@@ -214,3 +218,69 @@ async def generate_narrative(
             timeout=30.0,
         )
         return resp.json()
+
+
+# ─── Explore a verse: live Browser Use session ───
+
+
+class ExploreRequest(BaseModel):
+    title: str
+    description: str
+    url: str = ""
+    evidence_json: str = "{}"
+
+
+async def _run_explore_agent(session_id: str, task: str):
+    """Background task: run the explore agent in the user's live session."""
+    client = get_client()
+    try:
+        result = client.run(task=task, session_id=session_id)
+        await result
+        logger.info(f"Explore agent completed for session {session_id}")
+    except Exception as e:
+        logger.error(f"Explore agent failed for session {session_id}: {e}")
+    finally:
+        await client.close()
+
+
+@router.post("/explore")
+async def explore_verse(
+    req: ExploreRequest,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+):
+    """Create a live browser session and start an agent to explore a verse."""
+    # Figure out a starting URL from the evidence
+    evidence = {}
+    try:
+        evidence = json.loads(req.evidence_json) if req.evidence_json else {}
+    except json.JSONDecodeError:
+        pass
+
+    # Use the provided URL only if it starts with http(s)
+    start_url = req.url if req.url.startswith("http") else ""
+    if not start_url:
+        raw = evidence.get("url", "")
+        if raw.startswith("http"):
+            start_url = raw
+    # Fall back to a Google search for the title
+    if not start_url:
+        start_url = f"https://www.google.com/search?q={req.title.replace(' ', '+')}"
+
+    session_id, live_url = await create_session(start_url=start_url)
+
+    task = f"""You are helping a user finally follow through on something they hesitated to do.
+
+Background: {req.title}
+{req.description}
+
+{"Navigate to " + start_url + "." if start_url else "Search for what's needed to make this happen."}
+
+Your job is to help the user actually DO the thing they never did — sign up, book it, apply, finish it, send it, buy it, whatever it was.
+Be proactive and action-oriented. Don't just show them information — help them take the first real step.
+The user can see and interact with the browser alongside you.
+If you need the user to log in or take action, pause and wait for them.
+"""
+
+    background_tasks.add_task(_run_explore_agent, session_id, task)
+    return {"session_id": session_id, "live_url": live_url}
